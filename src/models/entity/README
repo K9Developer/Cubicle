@@ -1,0 +1,59 @@
+Have a GenericEntity with stuff that all entities have
+Then have PlayerEntity, BlockEntity, NormalEntity, etc.
+Make some APIs for them
+Then have
+enum Entity {
+    Player(PlayerEntity),
+    Block(BlockEntity),
+    Normal(NormalEntity)
+}
+
+struct PlayerEntity {
+    base: GenericEntity
+}
+
+FULL:
+use crate::models::world::block::Block;
+
+struct GenericEntity {
+    name: String
+}
+
+struct BlockEntity {
+    base: GenericEntity,
+    block: Block
+}
+
+struct PlayerEntity {
+    base: GenericEntity,
+    friend: String
+}
+
+enum Entity {
+    Player(PlayerEntity),
+    Block(BlockEntity)
+}
+
+impl Entity {
+    fn base(&self) -> &GenericEntity {
+        match self {
+            Entity::Player(p) => &p.base,
+            Entity::Block(b)  => &b.base,
+        }
+    }
+    fn base_mut(&mut self) -> &mut GenericEntity {
+        match self {
+            Entity::Player(p) => &mut p.base,
+            Entity::Block(b)  => &mut b.base,
+        }
+    }
+}
+
+fn main() {
+    let e = Entity::Player(PlayerEntity {
+        base: GenericEntity {name: "sdf".to_string()},
+        friend: "sdf".to_string()
+    });
+
+    println!("{:?}", e.base().name);
+}
