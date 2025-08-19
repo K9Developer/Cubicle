@@ -1,3 +1,4 @@
 pub mod world;
 pub mod other;
-mod entity;
+pub mod entity;
+pub mod nbt_structures;

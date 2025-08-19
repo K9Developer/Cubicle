@@ -11,6 +11,7 @@ fn div_floor(a: i32, b: i32) -> i32 {
     }
 }
 
+#[derive(Debug)]
 pub struct Position {
     x: f32,
     y: f32,
@@ -53,6 +54,12 @@ impl Position {
     pub fn to_index(&self, chunk_size: i32) -> usize {
         if self.i_x() > chunk_size || self.i_z() > chunk_size { panic!("Chunk size out of range"); }
         (self.i_y() * chunk_size * chunk_size + self.i_x() * chunk_size + self.i_z()) as usize
+    }
+}
+
+impl PartialEq for Position {
+    fn eq(&self, other: &Self) -> bool {
+        return other.x == self.x && other.y == self.y && other.z == self.z && self.dimension == other.dimension;
     }
 }
 

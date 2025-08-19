@@ -1,17 +1,21 @@
 use std::collections::HashMap;
+use std::time::Instant;
 use fastnbt::Value;
 use cubicle::constants::versions::Version;
+use cubicle::models::world::world::{World, WorldType};
 
 fn main() {
 
-    let a = Value::Compound(HashMap::from([
-        ("a".to_string(), Value::String("A".to_string())),
-        ("b".to_string(), Value::String("B".to_string())),
-    ]));
-    let b = Value::Compound(HashMap::from([
-        ("b".to_string(), Value::String("B".to_string())),
-        ("a".to_string(), Value::String("A".to_string())),
-    ]));
+    let v = Version::new("1.20.1", WorldType::SINGLEPLAYER);
+    let w = World::new("C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test".parse().unwrap(), &v);
+    let l = w.loader();
+    let regions = l.get_region_files("C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test".parse().unwrap());
 
-    println!("{}", a == b);
+    println!("Loaded {} regions!", regions.len());
+        let start = Instant::now();
+
+    w.loader().parse_region(&regions[0]);
+        let duration = start.elapsed();
+    println!("Elapsed: {:?}", duration);
+
 }

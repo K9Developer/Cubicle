@@ -1,0 +1,2 @@
+pub const MCA_REGION_SECTOR_SIZE: usize = 4096;
+pub const MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE: usize = 4;

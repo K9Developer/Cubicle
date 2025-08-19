@@ -15,7 +15,7 @@ pub struct Dimension<'a> {
 }
 
 impl <'a> Dimension<'a> {
-    fn new(dimension_id: String, version: Version) -> Dimension {
+    pub fn new(dimension_id: String, version: Version) -> Dimension<'a> {
         Dimension {
             dimension_id,
             version,
@@ -25,21 +25,25 @@ impl <'a> Dimension<'a> {
         }
     }
 
-    fn chunk(&mut self, chunk_position: Position) -> Option<&mut Chunk> {
+    pub fn chunk(&mut self, chunk_position: Position) -> Option<&'a mut Chunk> {
         self.chunks.get_mut(&(chunk_position.i_x(), chunk_position.i_z()))
     }
 
-    fn set_chunk(&mut self, chunk: Chunk) {
+    pub fn set_chunk(&mut self, chunk: Chunk<'a>) {
         let pos = chunk.position();
         self.chunks.insert((pos.i_x(), pos.i_z()), chunk);
     }
 
-    fn add_entity(&mut self, entity: Entity) -> &Entity {
+    pub fn set_chunks(&mut self, chunks: Vec<Chunk<'a>>) {
+        for chunk in chunks { self.set_chunk(chunk); }
+    }
+
+    pub fn add_entity(&mut self, entity: Entity) -> &Entity {
         self.entity_store.push(entity);
         self.entity_store.last().unwrap()
     }
 
-    fn add_structure(&mut self, structure: Structure) -> &Structure {
+    pub fn add_structure(&mut self, structure: Structure) -> &Structure {
         self.structure_store.push(structure);
         self.structure_store.last().unwrap()
     }

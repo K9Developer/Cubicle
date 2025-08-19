@@ -3,25 +3,30 @@ use crate::models::world::block::Block;
 
 // TODO: Actually complete the Entities
 
+#[derive(Debug)]
 struct GenericEntity {
     name: String
 }
 
+#[derive(Debug)]
 struct BlockEntity {
     base: GenericEntity,
     block: Block
 }
 
+#[derive(Debug)]
 struct PlayerEntity {
     base: GenericEntity,
     inventory: Inventory
 }
 
+#[derive(Debug)]
 struct NormalEntity {
     base: GenericEntity,
     inventory: Inventory
 }
 
+#[derive(Debug)]
 pub enum Entity {
     Player(PlayerEntity),
     Block(BlockEntity),
