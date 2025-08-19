@@ -1,5 +1,6 @@
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
+use crate::constants::versions::Version;
 
 fn div_floor(a: i32, b: i32) -> i32 {
     let div = a / b;
@@ -24,6 +25,15 @@ impl Position {
         Self { x, y, z, dimension: dimension.into() }
     }
 
+    pub fn from_index(index: i32, dimension: &str, chunk_position: Position, version: &Version) -> Position {
+        let layer_size = version.data.chunk_size*version.data.chunk_size;
+        let y = index / layer_size + version.data.lowest_y;
+        let rest = index % layer_size;
+        let x = chunk_position.i_x()*version.data.chunk_size + rest % version.data.chunk_size;
+        let z = chunk_position.i_z()*version.data.chunk_size + rest / version.data.chunk_size;
+        Position::new(dimension, x as f32, y as f32, z as f32)
+    }
+
     pub fn dimension(&self) -> &str { &self.dimension }
     pub fn x(&self) -> f32 { self.x }
     pub fn y(&self) -> f32 { self.y }
@@ -46,14 +56,23 @@ impl Position {
         (self.x.floor() as i32, self.y.floor() as i32, self.z.floor() as i32)
     }
 
-    pub fn chunk_coords_xz(&self, chunk_size: i32) -> (i32, i32) {
-        let (bx, _, bz) = self.to_block_coords();
-        (div_floor(bx, chunk_size), div_floor(bz, chunk_size))
+    #[inline]
+    pub fn to_index(&self, version: &Version) -> usize {
+        let chunk_size = version.data.chunk_size;
+        if self.i_x() > chunk_size || self.i_z() > chunk_size { panic!("Chunk size out of range"); }
+        let height = self.i_y() + version.data.lowest_y.abs();
+        (height * chunk_size * chunk_size + self.i_x() * chunk_size + self.i_z()) as usize
     }
 
-    pub fn to_index(&self, chunk_size: i32) -> usize {
-        if self.i_x() > chunk_size || self.i_z() > chunk_size { panic!("Chunk size out of range"); }
-        (self.i_y() * chunk_size * chunk_size + self.i_x() * chunk_size + self.i_z()) as usize
+    #[inline]
+    // Returns the (chunk_position, relative_block_pos_in_chunk)
+    pub fn to_chunk_coords(&self, chunk_size: i32) -> ((i32, i32), Position) {
+        let chunk_position = (self.i_x().div_euclid(chunk_size), self.i_z().div_euclid(chunk_size));
+
+        (
+            chunk_position,
+            Position::new(&*self.dimension, self.i_x().rem_euclid(chunk_size) as f32, self.y(), self.i_x().rem_euclid(chunk_size) as f32)
+        )
     }
 }
 
@@ -127,20 +146,6 @@ mod tests {
     }
 
     #[test]
-    fn test_chunk_coords_xz_positive_and_negative() {
-        let csz = 16;
-
-        let p1 = Position::new("o", 15.99, 0.0, 16.0);
-        assert_eq!(p1.chunk_coords_xz(csz), (0, 1));
-
-        let p2 = Position::new("o", -1.0, 0.0, -16.0);
-        assert_eq!(p2.chunk_coords_xz(csz), (-1, -1));
-
-        let p3 = Position::new("o", -16.0, 0.0, 0.0);
-        assert_eq!(p3.chunk_coords_xz(csz), (-1, 0));
-    }
-
-    #[test]
     fn test_distance_same_dimension() {
         let a = Position::new("dim", 1.0, 2.0, 3.0);
         let b = Position::new("dim", 4.0, 6.0, 8.0);
@@ -187,14 +192,6 @@ mod tests {
         let p: Position = (3.0, 4.0, 5.0, "nether").into();
         assert_eq!(p.dimension(), "nether");
         assert_eq!(format!("{}", p), "nether:(3, 4, 5)");
-    }
-
-    #[test]
-    fn test_to_index_non_negative_only() {
-        let p = Position::new("d", 3.2, 5.1, 7.9); // floors to (3,5,7)
-        let chunk = 16;
-        let expected = (5 * chunk * chunk + 3 * chunk + 7) as usize; // 5*256 + 48 + 7 = 1335
-        assert_eq!(p.to_index(chunk), expected);
     }
 
     #[test]

@@ -8,8 +8,8 @@ use crate::models::other::region::Region;
 
 pub trait Loader<'a> {
     fn get_region_files(&self, world_path: PathBuf) -> Vec<Region>;
-    fn parse_region(&self, region: &Region) -> Vec<Chunk>;
-    fn parse_chunk(&self, data: Vec<u8>, compression_type: u8, dimension: &str) -> Option<Chunk>;
+    fn parse_region(&self, region: &Region) -> Vec<Chunk<'a>>;
+    fn parse_chunk(&self, data: Vec<u8>, compression_type: u8, dimension: &str) -> Option<Chunk<'a>>;
 }
 
 pub fn get_loader(version: &Version) -> Box<dyn Loader + '_> {

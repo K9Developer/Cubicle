@@ -1,4 +1,4 @@
-use std::cmp::{max, PartialEq};
+use std::cmp::{max, min, PartialEq};
 use std::path::PathBuf;
 use crate::loaders::loader::Loader;
 use crate::models::other::position::Position;
@@ -67,9 +67,9 @@ impl<'a> WorldLoaderV012001<'a> {
 
     // TODO: Optimize the shit out of this - didnt want to overthink and just wanted this to work
     // TODO: There could be cases where the sections arent ordered correctly so we'll have to sort / do something faster with the y of the sections
-    fn populate_chunk(&self, chunk_obj: &mut Chunk<'a>, chunk_nbt: NBTChunk) {
+    unsafe fn populate_chunk(&self, chunk_obj: &mut Chunk<'a>, chunk_nbt: NBTChunk) {
 
-        let mut block_store = chunk_obj.block_store();
+        let mut block_store = chunk_obj.block_store_mut();
         let mut block_index = 0;
         let section_block_count = (self.version.data.section_height * self.version.data.chunk_size * self.version.data.chunk_size) as usize;
 
@@ -79,35 +79,35 @@ impl<'a> WorldLoaderV012001<'a> {
                 continue;
             }
             let block_palette = section.block_states.palette.unwrap();
-            let mut index_replacement_map = vec![0u32; block_palette.len()];
+            let mut index_replacement_map = vec![0usize; block_palette.len()];
 
             for (old_index, nbt_block) in block_palette.iter().enumerate() {
-                let block = self.palette_block_to_block(nbt_block.clone()); // TODO: Would be good if we checked if this block is in the palette before creating one
-                let new_index = block_store.add_block_to_palette(block);
-                index_replacement_map[old_index] = new_index as u32;
+                let new_index = block_store.add_nbt_block_to_palette(nbt_block);
+                index_replacement_map[old_index] = new_index;
             }
 
             let mut section_palette_indices: Vec<usize> = vec![index_replacement_map[0] as usize; section_block_count];
-
             if let Some(Value::LongArray(arr)) = section.block_states.data.as_ref() {
                 let section_data_i64: &[i64] = &*arr;
                 let longs: &[u64] = unsafe { std::slice::from_raw_parts(section_data_i64.as_ptr() as *const u64, section_data_i64.len()) };
                 let bits_per_block: u32 = max(bit_length(block_palette.len() as i32 - 1), 4) as u32;
-                let blocks_per_long = u64::BITS / bits_per_block;
-
+                let blocks_per_long = (u64::BITS / bits_per_block) as usize;
                 let mask: u64 = (1 << bits_per_block) - 1;
 
-                for section_block_index in 0..section_block_count {
-                    let long_index: usize = section_block_index / blocks_per_long as usize;
-                    let bit_offset_in_word: u32 = section_block_index as u32 % blocks_per_long * bits_per_block;
+                let mut section_block_index = 0;
+                for &long_value in longs {
+                    let mut shifted_value = long_value;
+                    let blocks_to_process = min(blocks_per_long, section_block_count - section_block_index - 1);
 
-                    let mut value_u64: u64 = longs[long_index] >> bit_offset_in_word;
-
-                    let old_palette_index: usize = (value_u64 & mask) as usize;
-                    section_palette_indices[section_block_index] = index_replacement_map[old_palette_index] as usize;
+                    for _ in 0..blocks_to_process {
+                        let old_palette_index = shifted_value & mask;
+                        *section_palette_indices.get_unchecked_mut(section_block_index) = *index_replacement_map.get_unchecked(old_palette_index as usize);
+                        shifted_value >>= bits_per_block;
+                        section_block_index += 1;
+                    }
                 }
-
             }
+
             block_store.set_blocks_with_slice(block_index, section_palette_indices.as_slice());
             block_index += section_block_count;
         }
@@ -130,7 +130,7 @@ impl<'a> Loader<'a> for WorldLoaderV012001<'a> {
         regions
     }
 
-    fn parse_region(&self, region: &Region) -> Vec<Chunk> {
+    fn parse_region(&self, region: &Region) -> Vec<Chunk<'a>> {
 
 
         let mut file = File::open(region.path.clone()).expect("Failed to open region file");
@@ -154,6 +154,7 @@ impl<'a> Loader<'a> for WorldLoaderV012001<'a> {
 
         let mut chunks = Vec::with_capacity(offsets.len());
         println!("Loading {} chunks...", offsets.len());
+
         for offset in offsets {
             file.seek(SeekFrom::Start(offset as u64)).expect("Failed to seek");
 
@@ -184,7 +185,6 @@ impl<'a> Loader<'a> for WorldLoaderV012001<'a> {
             2 => { chunk_data = self.uncompress_zlib(chunk_data); }
             _ => { return None }
         }
-
         let chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");
 
         let mut chunk = Chunk::new(
@@ -196,7 +196,8 @@ impl<'a> Loader<'a> for WorldLoaderV012001<'a> {
             chunk_nbt.status.clone()
         );
 
-        self.populate_chunk(&mut chunk, chunk_nbt);
+        unsafe { self.populate_chunk(&mut chunk, chunk_nbt); }
+
         Some(chunk)
     }
 }
