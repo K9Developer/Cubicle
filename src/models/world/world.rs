@@ -3,15 +3,21 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use crate::constants::versions::Version;
 use crate::loaders::loader::Loader;
+use crate::loaders::loader::Loader;
 use crate::models::other::position::Position;
 use crate::models::other::region::Region;
 use crate::models::world::block::Block;
 use crate::models::world::dimension::Dimension;
 
+// TODO: When loading a world have a WorldInfo struct with readonly flag
+
 pub struct World<'a> {
     path: PathBuf,
-
     seed: u64,
+
+    version: &'a Version,
+    loader: Loader<'a>,
+
     dimensions: HashMap<String, Dimension<'a>>,
 
     unloaded_regions: Vec<Region>,
@@ -19,13 +25,14 @@ pub struct World<'a> {
     loader: Loader<'a>
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum WorldType {
     SINGLEPLAYER,
     MULTIPLAYER,
 }
 
 
+// Generic World API
 impl<'a> World<'a> {
     pub fn new(path: PathBuf, version: &'a Version) -> Box<World<'a>> {
         Box::from(World {
@@ -33,6 +40,7 @@ impl<'a> World<'a> {
             seed: 0,
             dimensions: HashMap::new(),
             unloaded_regions: Vec::new(),
+            loader: Loader::new(version),
             loader: Loader::new(version),
             version,
         })
@@ -64,6 +72,8 @@ impl<'a> World<'a> {
         );
         self.unloaded_regions.len()
     }
+
+    pub fn load_region(&mut self, position: Position) {
 
     pub fn load_region(&mut self, position: Position) {
         for region in self.unloaded_regions.iter() {

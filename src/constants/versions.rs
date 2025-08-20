@@ -7,7 +7,7 @@ use serde_json::{Value, Map};
 use crate::models::world::world::WorldType;
 // TODO: Need to not create a new version each time if they are the same.
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct VersionData {
     pub lowest_y: i32,
     pub highest_y: i32,
@@ -16,7 +16,7 @@ pub struct VersionData {
     pub version_data: i32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Version {
     major: u8,
     minor: u8,

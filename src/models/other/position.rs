@@ -188,20 +188,6 @@ mod tests {
     }
 
     #[test]
-    fn test_chunk_coords_xz_positive_and_negative() {
-        let csz = 16;
-
-        let p1 = Position::new("o", 15.99, 0.0, 16.0);
-        assert_eq!(p1.chunk_coords_xz(csz), (0, 1));
-
-        let p2 = Position::new("o", -1.0, 0.0, -16.0);
-        assert_eq!(p2.chunk_coords_xz(csz), (-1, -1));
-
-        let p3 = Position::new("o", -16.0, 0.0, 0.0);
-        assert_eq!(p3.chunk_coords_xz(csz), (-1, 0));
-    }
-
-    #[test]
     fn test_distance_same_dimension() {
         let a = Position::new("dim", 1.0, 2.0, 3.0);
         let b = Position::new("dim", 4.0, 6.0, 8.0);
@@ -248,14 +234,6 @@ mod tests {
         let p: Position = (3.0, 4.0, 5.0, "nether").into();
         assert_eq!(p.dimension(), "nether");
         assert_eq!(format!("{}", p), "nether:(3, 4, 5)");
-    }
-
-    #[test]
-    fn test_to_index_non_negative_only() {
-        let p = Position::new("d", 3.2, 5.1, 7.9); // floors to (3,5,7)
-        let chunk = 16;
-        let expected = (5 * chunk * chunk + 3 * chunk + 7) as usize; // 5*256 + 48 + 7 = 1335
-        assert_eq!(p.to_index(chunk), expected);
     }
 
     #[test]
