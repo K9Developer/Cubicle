@@ -18,8 +18,6 @@ pub struct Chunk<'a> {
     block_store: BlockStore<'a>,
     entities: Vec<&'a Entity>,
     structures: Vec<&'a Structure>,
-    entities: Vec<&'a Entity>,
-    structures: Vec<&'a Structure>,
 
     version: &'a Version,
 }

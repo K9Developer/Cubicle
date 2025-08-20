@@ -1,6 +1,5 @@
 use crate::constants::versions::Version;
 use crate::models::nbt_structures::v3465::regular::NBTBlockPalette;
-use crate::models::nbt_structures::v3465::regular::NBTBlockPalette;
 use crate::models::other::fast_set::FastSet;
 use crate::models::other::position::Position;
 use crate::models::world::block::Block;
@@ -131,12 +130,7 @@ impl<'a> BlockStore<'a> {
 
     pub fn get_block_at_position(&self, relative_position: Position) -> Option<Block> {
         let index = relative_position.to_index(self.version);
-        let index = relative_position.to_index(self.version);
         self.get_block_at_index(index)
-    }
-
-    pub fn get_indices_slice(&self) -> &[usize] {
-        &self.indices
     }
 
     pub fn get_indices_slice(&self) -> &[usize] {

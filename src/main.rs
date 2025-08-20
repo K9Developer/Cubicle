@@ -1,6 +1,5 @@
 use cubicle::constants::versions::Version;
 use cubicle::models::other::position::Position;
-use cubicle::models::other::position::Position;
 use cubicle::models::world::world::{World, WorldType};
 use std::time::Instant;
 
