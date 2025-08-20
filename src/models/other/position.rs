@@ -20,6 +20,13 @@ pub struct Position {
     dimension: String
 }
 
+#[derive(Debug)]
+pub struct EntityPosition {
+    pub base: Position,
+    rot_yaw: f32,
+    rot_pitch: f32,
+}
+
 impl Position {
     pub fn new(dimension: &str, x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z, dimension: dimension.into() }
@@ -73,6 +80,41 @@ impl Position {
             chunk_position,
             Position::new(&*self.dimension, self.i_x().rem_euclid(chunk_size) as f32, self.y(), self.i_x().rem_euclid(chunk_size) as f32)
         )
+    }
+}
+
+impl EntityPosition {
+    pub fn new(x: f32, y: f32, z: f32, rot_yaw: f32, rot_pitch: f32, dimension: &str) -> Self {
+        EntityPosition {
+            base: Position { dimension: dimension.to_string(), x, y, z },
+            rot_yaw,
+            rot_pitch
+        }
+    }
+
+    pub fn dimension(&self) -> &str { &self.base.dimension }
+    pub fn x(&self) -> f32 { self.base.x }
+    pub fn y(&self) -> f32 { self.base.y }
+    pub fn z(&self) -> f32 { self.base.z }
+    pub fn i_x(&self) -> i32 { self.base.x.floor() as i32 }
+    pub fn i_y(&self) -> i32 { self.base.y.floor() as i32 }
+    pub fn i_z(&self) -> i32 { self.base.z.floor() as i32 }
+    pub fn yaw(&self) -> f32 { self.rot_yaw }
+    pub fn pitch(&self) -> f32 { self.rot_pitch }
+
+    pub fn set_x(&mut self, x: f32) { self.base.x = x }
+    pub fn set_y(&mut self, y: f32) { self.base.y = y }
+    pub fn set_z(&mut self, z: f32) { self.base.z = z }
+    pub fn set_yaw(&mut self, rot_yaw: f32) { self.rot_yaw = rot_yaw; }
+    pub fn set_pitch(&mut self, pitch: f32) { self.rot_pitch = pitch; }
+    pub fn set_dimension(&mut self, dimension: &str) { self.base.dimension = dimension.into(); }
+}
+
+impl PartialEq for EntityPosition {
+    fn eq(&self, other: &Self) -> bool {
+        self.base == other.base
+            && self.rot_yaw == other.rot_yaw
+            && self.rot_pitch == other.rot_pitch
     }
 }
 

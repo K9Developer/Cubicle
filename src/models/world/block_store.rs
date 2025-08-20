@@ -1,5 +1,5 @@
 use crate::constants::versions::Version;
-use crate::models::nbt_structures::v1_20_1::NBTBlockPalette;
+use crate::models::nbt_structures::v3465::regular::NBTBlockPalette;
 use crate::models::other::fast_set::FastSet;
 use crate::models::world::block::Block;
 use crate::models::other::position::Position;
@@ -47,7 +47,7 @@ impl<'a> BlockStore<'a> {
     }
 
     #[inline(always)]
-    pub fn add_nbt_block_to_palette(&mut self, block: &NBTBlockPalette) -> usize {
+    pub fn add_nbt_block_to_palette_v3465(&mut self, block: &NBTBlockPalette) -> usize {
         for (i, b) in self.palette.iter().enumerate() {
             if b.name() != block.name { continue; }
             if block.properties.is_some() && b.properties() == block.properties.as_ref().unwrap() {

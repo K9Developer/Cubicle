@@ -2,7 +2,7 @@ use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use crate::constants::versions::Version;
-use crate::loaders::loader::{get_loader, Loader};
+use crate::loaders::loader::Loader;
 use crate::models::other::position::Position;
 use crate::models::other::region::Region;
 use crate::models::world::block::Block;
@@ -15,7 +15,7 @@ pub struct World<'a> {
     seed: u64,
 
     version: &'a Version,
-    world_loader: Box<dyn Loader<'a> + 'a>,
+    loader: Loader<'a>,
 
     dimensions: HashMap<String, Dimension<'a>>,
     unloaded_regions: Vec<Region>
@@ -36,7 +36,7 @@ impl<'a> World<'a> {
             seed: 0,
             dimensions: HashMap::new(),
             unloaded_regions: Vec::new(),
-            world_loader: get_loader(version),
+            loader: Loader::new(version),
             version,
         })
     }
@@ -45,7 +45,7 @@ impl<'a> World<'a> {
     pub fn dimension(&mut self, name: &str) -> &mut Dimension<'a> { self.dimensions.get_mut(name).unwrap() }
     pub fn seed(&self) -> u64 { self.seed }
     pub fn path(&self) -> &PathBuf { &self.path }
-    pub fn loader(&self) -> &Box<dyn Loader<'a> + 'a> { &self.world_loader }
+    pub fn loader(&self) -> &Loader<'a> { &self.loader }
 
     pub fn set_seed(&mut self, seed: u64) { self.seed = seed; }
     pub fn set_dimension(&mut self, name: String, dimension: Dimension<'a>) { self.dimensions.insert(name, dimension); }
@@ -55,7 +55,7 @@ impl<'a> World<'a> {
 // World Loaders Related
 impl<'a> World<'a> {
     pub fn register_regions(&mut self) -> usize {
-        self.unloaded_regions = self.world_loader.get_region_files(self.path.clone());
+        self.unloaded_regions = self.loader().block_loader().get_region_files(self.path.clone());
         self.dimensions = HashMap::from([ //TODO: Dont hardcode this
             ("overworld".to_string(), Dimension::new("overworld".to_string(), self.version)),
             ("the_nether".to_string(), Dimension::new("the_nether".to_string(), self.version)),
@@ -68,7 +68,7 @@ impl<'a> World<'a> {
     pub fn load_region(&mut self, position: Position) {
         for region in self.unloaded_regions.iter() {
             if position == region.position {
-                let chunks = self.world_loader.parse_region(region);
+                let chunks = self.loader().block_loader().parse_region(region);
                 let dim = self.dimensions.get_mut(region.position.dimension()).unwrap();
                 dim.set_chunks(chunks);
                 break;

@@ -41,7 +41,7 @@ impl<'a> BlockLoaderV3465<'a> {
             let mut index_replacement_map = vec![0usize; block_palette.len()];
 
             for (old_index, nbt_block) in block_palette.iter().enumerate() {
-                let new_index = block_store.add_nbt_block_to_palette(nbt_block);
+                let new_index = block_store.add_nbt_block_to_palette_v3465(nbt_block);
                 index_replacement_map[old_index] = new_index;
             }
 
