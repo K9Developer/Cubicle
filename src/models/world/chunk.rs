@@ -16,8 +16,8 @@ pub struct Chunk<'a> {
     status: String,
 
     block_store: BlockStore<'a>,
-    entities: Vec<&'static Entity>, // TODO: check if this lifetime is alright
-    structures: Vec<&'static Structure>,
+    entities: Vec<&'a Entity>,
+    structures: Vec<&'a Structure>,
 
     version: &'a Version
 }
@@ -36,7 +36,7 @@ impl<'a> Chunk<'a> {
             block_store: BlockStore::new(&version),
             entities: Vec::new(),
             structures: Vec::new()
-      }
+        }
     }
 
     pub fn version(&self) -> &Version { &self.version }
@@ -44,9 +44,10 @@ impl<'a> Chunk<'a> {
     pub fn inhabited_time(&self) -> &Tick { &self.inhabited_time }
     pub fn last_update(&self) -> &Tick { &self.last_update }
     pub fn status(&self) -> &String { &self.status }
-    pub fn block_store(&mut self) -> &mut BlockStore<'a> { &mut self.block_store }
-    pub fn entities(&mut self) -> &mut Vec<&'static Entity> { &mut self.entities }
-    pub fn structures(&mut self) -> &mut Vec<&'static Structure> { &mut self.structures }
+    pub fn block_store(&self) -> &BlockStore<'a> { &self.block_store }
+    pub fn block_store_mut(&mut self) -> &mut BlockStore<'a> { &mut self.block_store }
+    pub fn entities(&mut self) -> &Vec<&'a Entity> { &self.entities }
+    pub fn structures(&mut self) -> &Vec<&'a Structure> { &self.structures }
 
     pub fn set_inhabited_time(&mut self, inhabited_time: Tick) { self.inhabited_time = inhabited_time; }
     pub fn set_last_update(&mut self, last_update: Tick) { self.last_update = last_update; }

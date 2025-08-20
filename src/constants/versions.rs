@@ -1,8 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt;
 use serde_json;
-use std::fs;
-use std::path::PathBuf;
 use super::config::config;
 use serde::Deserialize;
 use serde_json::{Value, Map};
@@ -14,7 +12,8 @@ pub struct VersionData {
     pub lowest_y: i32,
     pub highest_y: i32,
     pub chunk_size: i32,
-    pub section_height: i32
+    pub section_height: i32,
+    pub version_data: i32
 }
 
 #[derive(Debug)]
@@ -97,7 +96,7 @@ mod tests {
     use super::*;
 
     fn vd(lo: i32, hi: i32, cs: i32) -> VersionData {
-        VersionData { lowest_y: lo, highest_y: hi, chunk_size: cs, section_height: 0 }
+        VersionData { lowest_y: lo, highest_y: hi, chunk_size: cs, section_height: 0, version_data: 0 }
     }
 
     #[test]

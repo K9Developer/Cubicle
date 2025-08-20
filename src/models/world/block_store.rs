@@ -1,4 +1,5 @@
 use crate::constants::versions::Version;
+use crate::models::nbt_structures::v3465::regular::NBTBlockPalette;
 use crate::models::other::fast_set::FastSet;
 use crate::models::world::block::Block;
 use crate::models::other::position::Position;
@@ -45,6 +46,19 @@ impl<'a> BlockStore<'a> {
         self.palette.insert(block)
     }
 
+    #[inline(always)]
+    pub fn add_nbt_block_to_palette(&mut self, block: &NBTBlockPalette) -> usize {
+        for (i, b) in self.palette.iter().enumerate() {
+            if b.name() != block.name { continue; }
+            if block.properties.is_some() && b.properties() == block.properties.as_ref().unwrap() {
+                return i;
+            }
+        }
+        self.add_block_to_palette(
+            Block::new(&*block.name, block.properties.clone())
+        )
+    }
+
     pub fn set_block_with_index(&mut self, index: usize, palette_index: usize) -> bool {
         if index > self.indices.len() - 1 { return false; };
         if palette_index >= self.palette.len() { return false; }
@@ -76,7 +90,7 @@ impl<'a> BlockStore<'a> {
     }
 
     pub fn set_block_at_position(&mut self, relative_position: Position, block: Block) -> bool {
-        let index = relative_position.to_index(self.version.data.chunk_size);
+        let index = relative_position.to_index(self.version);
         self.set_block_at_index(index, block)
     }
 
@@ -88,7 +102,11 @@ impl<'a> BlockStore<'a> {
     }
 
     pub fn get_block_at_position(&self, relative_position: Position) -> Option<Block> {
-        let index = relative_position.to_index(self.version.data.chunk_size);
+        let index = relative_position.to_index(self.version);
         self.get_block_at_index(index)
+    }
+
+    pub fn get_indices_slice(&self) -> &[usize] {
+        &self.indices
     }
 }

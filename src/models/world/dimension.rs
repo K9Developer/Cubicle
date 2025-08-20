@@ -7,7 +7,7 @@ use crate::models::world::chunk::Chunk;
 
 pub struct Dimension<'a> {
     dimension_id: String,
-    version: Version,
+    version: &'a Version,
 
     chunks: HashMap<(i32,i32), Chunk<'a>>,
     entity_store: Vec<Entity>,
@@ -15,7 +15,7 @@ pub struct Dimension<'a> {
 }
 
 impl <'a> Dimension<'a> {
-    pub fn new(dimension_id: String, version: Version) -> Dimension<'a> {
+    pub fn new(dimension_id: String, version: &'a Version) -> Dimension<'a> {
         Dimension {
             dimension_id,
             version,
@@ -25,8 +25,12 @@ impl <'a> Dimension<'a> {
         }
     }
 
-    pub fn chunk(&mut self, chunk_position: Position) -> Option<&'a mut Chunk> {
-        self.chunks.get_mut(&(chunk_position.i_x(), chunk_position.i_z()))
+    pub fn chunk(&self, chunk_position: (i32, i32)) -> Option<&Chunk<'a>> {
+        self.chunks.get(&chunk_position)
+    }
+
+    pub fn chunk_mut(&mut self, chunk_position: (i32, i32)) -> Option<&mut Chunk<'a>> {
+        self.chunks.get_mut(&chunk_position)
     }
 
     pub fn set_chunk(&mut self, chunk: Chunk<'a>) {

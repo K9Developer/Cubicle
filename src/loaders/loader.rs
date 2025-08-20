@@ -1,20 +1,24 @@
-use std::path::PathBuf;
+// TODO: Here put the main loader, it will handle lazy loading, dry loading, etc.
+
 use crate::constants::versions::Version;
-use crate::models::world::chunk::Chunk;
-use crate::loaders::v1_20_1::WorldLoaderV012001;
-use crate::models::other::region::Region;
+use crate::loaders::blocks_loader::loader::{get_block_loader, BlockLoader};
+use crate::loaders::entities_loader::loader::{get_entity_loader, EntityLoader};
 
-// TODO: Add more funcs and lazy loading like empty_load all regions so we get metadata of all chunks and we can count them, etc. - Think of a system later
-
-pub trait Loader<'a> {
-    fn get_region_files(&self, world_path: PathBuf) -> Vec<Region>;
-    fn parse_region(&self, region: &Region) -> Vec<Chunk>;
-    fn parse_chunk(&self, data: Vec<u8>, compression_type: u8, dimension: &str) -> Option<Chunk>;
+pub struct Loader<'a> {
+    block_loader: Box<dyn BlockLoader<'a> + 'a>,
+    entity_loader: Box<dyn EntityLoader<'a> + 'a>,
+// player_loader
 }
 
-pub fn get_loader(version: &Version) -> Box<dyn Loader + '_> {
-    match version.to_string().as_str() {
-        "1.20.1" => Box::new(WorldLoaderV012001 { version }),
-        _ => panic!()
+// TODO: Also make it possible to detect data version automatically - by that version too maybe?
+impl<'a> Loader<'a> {
+    pub fn new(version: &'a Version) -> Self {
+        Self {
+            block_loader: get_block_loader(version),
+            entity_loader: get_entity_loader(version)
+        }
     }
+
+    pub fn block_loader(&self) -> &Box<dyn BlockLoader<'a> + 'a> { &self.block_loader }
+    pub fn entity_loader(&self) -> &Box<dyn EntityLoader<'a> + 'a> { &self.entity_loader }
 }

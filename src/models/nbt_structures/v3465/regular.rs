@@ -24,7 +24,6 @@ pub struct NBTChunk {
 
     pub sections: Vec<NBTSection>,
     pub block_entities: Vec<NBTBlockEntity>,
-    pub entities: Option<Vec<NBTEntity>>,
     pub fluid_ticks: Vec<NBTTileTick>,
     pub block_ticks: Vec<NBTTileTick>,
     pub structures: NBTStructure,
@@ -71,20 +70,6 @@ pub struct NBTBlockEntity {
     pub y: i32,
     pub z: i32,
 
-    #[serde(flatten)]
-    pub others: HashMap<String, Value>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct NBTEntity {
-    #[serde(rename="Air")]
-    pub air: i16,
-    #[serde(rename="Pos")]
-    pub position: Vec<f64>,
-    #[serde(rename="Rotation")]
-    pub rotation: Vec<f32>,
-    #[serde(rename="UUID")]
-    pub uuid: Vec<i32>,
     #[serde(flatten)]
     pub others: HashMap<String, Value>,
 }

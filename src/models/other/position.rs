@@ -1,5 +1,6 @@
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
+use crate::constants::versions::Version;
 
 fn div_floor(a: i32, b: i32) -> i32 {
     let div = a / b;
@@ -19,9 +20,25 @@ pub struct Position {
     dimension: String
 }
 
+#[derive(Debug)]
+pub struct EntityPosition {
+    pub base: Position,
+    rot_yaw: f32,
+    rot_pitch: f32,
+}
+
 impl Position {
     pub fn new(dimension: &str, x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z, dimension: dimension.into() }
+    }
+
+    pub fn from_index(index: i32, dimension: &str, chunk_position: Position, version: &Version) -> Position {
+        let layer_size = version.data.chunk_size*version.data.chunk_size;
+        let y = index / layer_size + version.data.lowest_y;
+        let rest = index % layer_size;
+        let x = chunk_position.i_x()*version.data.chunk_size + rest % version.data.chunk_size;
+        let z = chunk_position.i_z()*version.data.chunk_size + rest / version.data.chunk_size;
+        Position::new(dimension, x as f32, y as f32, z as f32)
     }
 
     pub fn dimension(&self) -> &str { &self.dimension }
@@ -46,14 +63,58 @@ impl Position {
         (self.x.floor() as i32, self.y.floor() as i32, self.z.floor() as i32)
     }
 
-    pub fn chunk_coords_xz(&self, chunk_size: i32) -> (i32, i32) {
-        let (bx, _, bz) = self.to_block_coords();
-        (div_floor(bx, chunk_size), div_floor(bz, chunk_size))
+    #[inline]
+    pub fn to_index(&self, version: &Version) -> usize {
+        let chunk_size = version.data.chunk_size;
+        if self.i_x() > chunk_size || self.i_z() > chunk_size { panic!("Chunk size out of range"); }
+        let height = self.i_y() + version.data.lowest_y.abs();
+        (height * chunk_size * chunk_size + self.i_x() * chunk_size + self.i_z()) as usize
     }
 
-    pub fn to_index(&self, chunk_size: i32) -> usize {
-        if self.i_x() > chunk_size || self.i_z() > chunk_size { panic!("Chunk size out of range"); }
-        (self.i_y() * chunk_size * chunk_size + self.i_x() * chunk_size + self.i_z()) as usize
+    #[inline]
+    // Returns the (chunk_position, relative_block_pos_in_chunk)
+    pub fn to_chunk_coords(&self, chunk_size: i32) -> ((i32, i32), Position) {
+        let chunk_position = (self.i_x().div_euclid(chunk_size), self.i_z().div_euclid(chunk_size));
+
+        (
+            chunk_position,
+            Position::new(&*self.dimension, self.i_x().rem_euclid(chunk_size) as f32, self.y(), self.i_x().rem_euclid(chunk_size) as f32)
+        )
+    }
+}
+
+impl EntityPosition {
+    pub fn new(x: f32, y: f32, z: f32, rot_yaw: f32, rot_pitch: f32, dimension: &str) -> Self {
+        EntityPosition {
+            base: Position { dimension: dimension.to_string(), x, y, z },
+            rot_yaw,
+            rot_pitch
+        }
+    }
+
+    pub fn dimension(&self) -> &str { &self.base.dimension }
+    pub fn x(&self) -> f32 { self.base.x }
+    pub fn y(&self) -> f32 { self.base.y }
+    pub fn z(&self) -> f32 { self.base.z }
+    pub fn i_x(&self) -> i32 { self.base.x.floor() as i32 }
+    pub fn i_y(&self) -> i32 { self.base.y.floor() as i32 }
+    pub fn i_z(&self) -> i32 { self.base.z.floor() as i32 }
+    pub fn yaw(&self) -> f32 { self.rot_yaw }
+    pub fn pitch(&self) -> f32 { self.rot_pitch }
+
+    pub fn set_x(&mut self, x: f32) { self.base.x = x }
+    pub fn set_y(&mut self, y: f32) { self.base.y = y }
+    pub fn set_z(&mut self, z: f32) { self.base.z = z }
+    pub fn set_yaw(&mut self, rot_yaw: f32) { self.rot_yaw = rot_yaw; }
+    pub fn set_pitch(&mut self, pitch: f32) { self.rot_pitch = pitch; }
+    pub fn set_dimension(&mut self, dimension: &str) { self.base.dimension = dimension.into(); }
+}
+
+impl PartialEq for EntityPosition {
+    fn eq(&self, other: &Self) -> bool {
+        self.base == other.base
+            && self.rot_yaw == other.rot_yaw
+            && self.rot_pitch == other.rot_pitch
     }
 }
 
