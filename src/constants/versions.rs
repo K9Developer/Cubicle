@@ -1,11 +1,13 @@
+use std::any::Any;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::fmt;
+use std::sync::{Mutex, OnceLock};
 use serde_json;
 use super::config::config;
 use serde::Deserialize;
 use serde_json::{Value, Map};
 use crate::models::world::world::WorldType;
-// TODO: Need to not create a new version each time if they are the same.
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct VersionData {
@@ -26,27 +28,27 @@ pub struct Version {
     pub data: VersionData,
 }
 
- impl Version {
-    pub fn new(version: &str, world_type: WorldType) -> Version {
-        let parts = version.split('.').collect::<Vec<&str>>();
-        if parts.len() < 2 { panic!("Invalid version structure! expected xx.xx or xx.xx.xx") };
-        Version {
-            major: parts[0].parse::<u8>().unwrap(),
-            minor: parts[1].parse::<u8>().unwrap(),
-            patch: if parts.len() > 2 { parts[2].parse::<u8>().unwrap() } else { 0 },
-            world_type,
-            data: get_version_data(version)
-        }
-    }
+impl Version {
+   pub fn new(version: &str, world_type: WorldType) -> Version {
+       let parts = version.split('.').collect::<Vec<&str>>();
+       if parts.len() < 2 { panic!("Invalid version structure! expected xx.xx or xx.xx.xx") };
+       Version {
+           major: parts[0].parse::<u8>().unwrap(),
+           minor: parts[1].parse::<u8>().unwrap(),
+           patch: if parts.len() > 2 { parts[2].parse::<u8>().unwrap() } else { 0 },
+           world_type,
+           data: get_version_data(version)
+       }
+   }
 
-    pub const fn from_parts(major: u8, minor: u8, patch: u8, world_type: WorldType, data: VersionData) -> Self {
-        Self { major, minor, patch, world_type, data }
-    }
+   pub const fn from_parts(major: u8, minor: u8, patch: u8, world_type: WorldType, data: VersionData) -> Self {
+       Self { major, minor, patch, world_type, data }
+   }
 
-    pub const fn major(&self) -> u8 { self.major }
-    pub const fn minor(&self) -> u8 { self.minor }
-    pub const fn patch(&self) -> u8 { self.patch }
-     pub fn world_type(&self) -> &WorldType { &self.world_type }
+   pub const fn major(&self) -> u8 { self.major }
+   pub const fn minor(&self) -> u8 { self.minor }
+   pub const fn patch(&self) -> u8 { self.patch }
+    pub fn world_type(&self) -> &WorldType { &self.world_type }
 }
 
 impl PartialEq for Version {
@@ -72,6 +74,26 @@ impl Ord for Version {
 impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+pub struct VersionManager {
+    cache: Mutex<HashMap<(WorldType, String), &'static Version>>,
+}
+
+static MANAGER: OnceLock<VersionManager> = OnceLock::new();
+
+impl VersionManager {
+    fn instance() -> &'static VersionManager { MANAGER.get_or_init(|| VersionManager { cache: Mutex::new(HashMap::new()), }) }
+
+    pub fn get(id: &str, world_type: WorldType) -> &'static Version {
+        let this = Self::instance();
+        let mut map = this.cache.lock().unwrap();
+        let version_key = (world_type.clone(), id.to_string());
+        if let Some(&v) = map.get(&version_key) { return v; }
+        let ver: &'static Version = Box::leak(Box::new(Version::new(id, world_type)));
+        map.insert(version_key, ver);
+        ver
     }
 }
 

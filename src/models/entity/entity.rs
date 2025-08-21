@@ -7,30 +7,30 @@ use crate::models::other::tick::Tick;
 // TODO: Actually complete the Entities
 
 #[derive(Debug)]
-struct GenericEntity {
+pub struct GenericEntity {
     air_remaining: Tick,
     distance_fallen: f32,
     fire_ticks_left: Tick,
     is_invulnerable: bool,
-    velocity_vector: (f32, f32, f32),
+    velocity_vector: (f64, f64, f64),
     is_on_ground: bool,
     position: EntityPosition,
     uuid: u128
 }
 
 pub enum EntityType {
-    PLAYER,
-    MOB
+    Player,
+    Mob
 }
 
 #[derive(Debug)]
-struct PlayerEntity { // TODO
+pub struct PlayerEntity { // TODO
     base: GenericEntity,
     inventory: Inventory
 }
 
 #[derive(Debug)]
-struct MobEntity {
+pub struct MobEntity {
     base: GenericEntity,
     id: String,
     extra: HashMap<String, Value>
@@ -43,7 +43,7 @@ pub enum Entity {
 }
 
 impl Entity {
-    fn new(entity_type: EntityType, air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f32,f32,f32), is_on_ground: bool, position: EntityPosition, uuid: u128) -> Self {
+    pub fn new(entity_type: EntityType, air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f64,f64,f64), is_on_ground: bool, position: EntityPosition, uuid: u128) -> Self {
         let generic = GenericEntity::new(
             air_remaining,
             distance_fallen,
@@ -56,7 +56,7 @@ impl Entity {
         );
 
         match entity_type {
-            EntityType::PLAYER=> {
+            EntityType::Player => {
                 Entity::Player(
                     PlayerEntity {
                         base: generic,
@@ -64,7 +64,7 @@ impl Entity {
                     }
                 )
             },
-            EntityType::MOB => {
+            EntityType::Mob => {
                 Entity::Mob(
                     MobEntity {
                         base: generic,
@@ -76,14 +76,14 @@ impl Entity {
         }
     }
 
-    fn base(&self) -> &GenericEntity {
+    pub fn base(&self) -> &GenericEntity {
         match self {
             Entity::Player(p) => &p.base,
             Entity::Mob(n) => &n.base
         }
     }
 
-    fn base_mut(&mut self) -> &mut GenericEntity {
+    pub fn base_mut(&mut self) -> &mut GenericEntity {
         match self {
             Entity::Player(p) => &mut p.base,
             Entity::Mob(n) => &mut n.base
@@ -92,7 +92,7 @@ impl Entity {
 }
 
 impl GenericEntity {
-    fn new(air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f32,f32,f32), is_on_ground: bool, position: EntityPosition, uuid: u128) -> Self {
+    fn new(air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f64,f64,f64), is_on_ground: bool, position: EntityPosition, uuid: u128) -> Self {
         Self {
             air_remaining,
             distance_fallen,
@@ -105,20 +105,34 @@ impl GenericEntity {
         }
     }
 
-    fn air_remaining(&self) -> &Tick { &self.air_remaining }
-    fn distance_fallen(&self) -> &f32 { &self.distance_fallen }
-    fn fire_ticks_left(&self) -> &Tick { &self.fire_ticks_left }
-    fn is_invulnerable(&self) -> &bool { &self.is_invulnerable }
-    fn velocity_vector(&self) -> &(f32, f32, f32) { &self.velocity_vector }
-    fn is_on_ground(&self) -> &bool { &self.is_on_ground }
-    fn position(&self) -> &EntityPosition { &self.position }
+    pub fn air_remaining(&self) -> &Tick { &self.air_remaining }
+    pub fn distance_fallen(&self) -> &f32 { &self.distance_fallen }
+    pub fn fire_ticks_left(&self) -> &Tick { &self.fire_ticks_left }
+    pub fn is_invulnerable(&self) -> &bool { &self.is_invulnerable }
+    pub fn velocity_vector(&self) -> &(f64, f64, f64) { &self.velocity_vector }
+    pub fn is_on_ground(&self) -> &bool { &self.is_on_ground }
+    pub fn position(&self) -> &EntityPosition { &self.position }
 
-    fn set_air_remaining(&mut self, remaining: Tick) { self.air_remaining = remaining; }
-    fn set_distance_fallen(&mut self, remaining: f32) { self.distance_fallen = remaining; }
-    fn set_fire_ticks_left(&mut self, remaining: Tick) { self.fire_ticks_left = remaining; }
-    fn set_is_vulnerable(&mut self, is_vulnerable: bool) {self.is_on_ground = is_vulnerable; }
-    fn set_velocity_vector(&mut self, vector: (f32, f32, f32)) { self.velocity_vector = vector; }
-    fn set_is_on_ground(&mut self, is_on_ground: bool) { self.is_on_ground = is_on_ground; }
-    fn set_position(&mut self, position: EntityPosition) { self.position = position; }
+    pub fn set_air_remaining(&mut self, remaining: Tick) { self.air_remaining = remaining; }
+    pub fn set_distance_fallen(&mut self, remaining: f32) { self.distance_fallen = remaining; }
+    pub fn set_fire_ticks_left(&mut self, remaining: Tick) { self.fire_ticks_left = remaining; }
+    pub fn set_is_vulnerable(&mut self, is_vulnerable: bool) {self.is_on_ground = is_vulnerable; }
+    pub fn set_velocity_vector(&mut self, vector: (f64, f64, f64)) { self.velocity_vector = vector; }
+    pub fn set_is_on_ground(&mut self, is_on_ground: bool) { self.is_on_ground = is_on_ground; }
+    pub fn set_position(&mut self, position: EntityPosition) { self.position = position; }
+}
+
+impl MobEntity {
+    pub fn new(id: String, air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f64,f64,f64), is_on_ground: bool, position: EntityPosition, uuid: u128, extra: HashMap<String, Value>) -> Self {
+        Self {
+            base: GenericEntity::new(air_remaining, distance_fallen, fire_ticks_left, is_invulnerable, velocity_vector, is_on_ground, position, uuid),
+            id,
+            extra
+        }
+    }
+
+    pub fn id(&self) -> &str { &self.id }
+
+    pub fn set_id(&mut self, id: String) { self.id = id; }
 }
 

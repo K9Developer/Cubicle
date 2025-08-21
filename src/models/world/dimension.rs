@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
-use crate::models::other::position::Position;
 use crate::models::other::structure::Structure;
 use crate::models::world::chunk::Chunk;
 
@@ -29,6 +28,10 @@ impl <'a> Dimension<'a> {
         self.chunks.get(&chunk_position)
     }
 
+    pub fn entities(&self) -> Vec<&Entity> {
+        self.entity_store.iter().collect()
+    }
+
     pub fn chunk_mut(&mut self, chunk_position: (i32, i32)) -> Option<&mut Chunk<'a>> {
         self.chunks.get_mut(&chunk_position)
     }
@@ -45,6 +48,10 @@ impl <'a> Dimension<'a> {
     pub fn add_entity(&mut self, entity: Entity) -> &Entity {
         self.entity_store.push(entity);
         self.entity_store.last().unwrap()
+    }
+
+    pub fn add_entities(&mut self, entities: Vec<Entity>) {
+        self.entity_store.extend(entities);
     }
 
     pub fn add_structure(&mut self, structure: Structure) -> &Structure {

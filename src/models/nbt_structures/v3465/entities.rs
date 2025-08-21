@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use fastnbt::Value;
 use serde::{Deserialize, Serialize};
 
@@ -12,21 +13,24 @@ pub struct NBTChunk {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NBTEntity {
     #[serde(rename = "Air")]
-    air_left: i16,
+    pub air_left: i16,
     #[serde(rename = "FallDistance")]
-    distance_fallen: f32,
+    pub distance_fallen: f32,
     #[serde(rename = "Fire")]
-    fire_ticks_left: i16,
+    pub fire_ticks_left: i16,
     #[serde(rename = "Invulnerable")]
-    is_invulnerable: bool,
+    pub is_invulnerable: bool,
     #[serde(rename = "Motion")]
-    motion: [f64; 3],
+    pub motion: [f64; 3],
     #[serde(rename = "OnGround")]
-    is_on_ground: bool,
+    pub is_on_ground: bool,
     #[serde(rename = "Pos")]
-    position: [f64; 3],
+    pub position: [f64; 3],
     #[serde(rename = "Rotation")]
-    rotation: [f64; 2],
+    pub rotation: [f64; 2],
     #[serde(rename = "UUID")]
-    uuid: Value,
+    pub uuid: Value,
+    pub id: String,
+    #[serde(flatten)]
+    pub others: HashMap<String, Value>,
 }

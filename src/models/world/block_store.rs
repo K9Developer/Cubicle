@@ -1,5 +1,4 @@
 use crate::constants::versions::Version;
-use crate::models::nbt_structures::v3465::regular::NBTBlockPalette;
 use crate::models::other::fast_set::FastSet;
 use crate::models::other::position::Position;
 use crate::models::world::block::Block;
@@ -34,30 +33,10 @@ impl<'a> BlockStore<'a> {
         }
     }
 
-    pub fn add_palette(&mut self, palette: &FastSet<Block>) {
-        // TODO: clone() might cause slowness or too much memory - shouldnt since its small amount
-        for block in palette.iter() {
-            self.palette.insert(block.clone());
-        }
-    }
-
     // returns new index
     #[inline(always)]
     pub fn add_block_to_palette(&mut self, block: Block) -> usize {
         self.palette.insert(block)
-    }
-
-    #[inline(always)]
-    pub fn add_nbt_block_to_palette_v3465(&mut self, block: &NBTBlockPalette) -> usize {
-        for (i, b) in self.palette.iter().enumerate() {
-            if b.name() != block.name {
-                continue;
-            }
-            if block.properties.is_some() && b.properties() == block.properties.as_ref().unwrap() {
-                return i;
-            }
-        }
-        self.add_block_to_palette(Block::new(&*block.name, block.properties.clone()))
     }
 
     pub fn set_block_with_index(&mut self, index: usize, palette_index: usize) -> bool {
@@ -133,7 +112,11 @@ impl<'a> BlockStore<'a> {
         self.get_block_at_index(index)
     }
 
-    pub fn get_indices_slice(&self) -> &[usize] {
+    pub fn indices_slice(&self) -> &[usize] {
         &self.indices
+    }
+
+    pub fn indices_slice_mut(&mut self) -> &mut [usize] {
+        &mut self.indices
     }
 }

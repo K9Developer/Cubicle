@@ -14,7 +14,7 @@ pub struct Block {
 
 impl Block {
     pub fn new(name: &str, extra: Option<HashMap<String, Value>>) -> Block {
-        // TODO: Enforce a namespace
+        // TODO: Enforce a namespace in a faster way
         Block {
             name: if name.contains(":") { name.to_string() } else { ("minecraft:".to_owned() + name).to_owned() },
             extra: extra.unwrap_or_default(),

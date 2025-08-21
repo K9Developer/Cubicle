@@ -1,11 +1,16 @@
+use std::collections::HashMap;
+use std::hash::Hash;
 use std::path::PathBuf;
+use fastnbt::Value;
 use super::loader::{EntityLoader};
-use crate::models::other::region::Region;
+use crate::models::other::region::{Region, RegionType};
 use crate::models::nbt_structures::v3465::entities::{NBTChunk};
 use crate::constants::constants::{ZLIB_COMPRESSION_TYPE};
 use crate::constants::versions::Version;
-use crate::loaders::utils::{get_region_files_in_folder, parse_region_file, uncompress_zlib};
-use crate::models::entity::entity::Entity;
+use crate::loaders::utils::{get_region_files_in_folder, nbt_uuid_to_u128, parse_region_file, uncompress_zlib};
+use crate::models::entity::entity::{Entity, EntityType, MobEntity};
+use crate::models::other::position::EntityPosition;
+use crate::models::other::tick::Tick;
 use crate::models::world::world::WorldType;
 // TODO: Support other dimensions (custom paths)
 
@@ -15,7 +20,24 @@ pub(super) struct EntityLoaderV3465<'a> {
 
 impl<'a> EntityLoaderV3465<'a> {
     fn populate_entity_list(&self, entity_list: &mut Vec<Entity>, chunk_nbt: NBTChunk, dimension: &str) {
-        //TODO
+        for entity in chunk_nbt.entities {
+            if let Value::IntArray(arr) = entity.uuid {
+                let uuid_parts: &[i32] = &*arr;
+                let e = MobEntity::new(
+                    entity.id,
+                    Tick::new(entity.air_left as usize),
+                    entity.distance_fallen,
+                    Tick::new(entity.fire_ticks_left as usize),
+                    entity.is_invulnerable,
+                    <(f64, f64, f64)>::from(entity.motion),
+                    entity.is_on_ground,
+                    EntityPosition::new(entity.position[0], entity.position[1], entity.position[2], entity.rotation[0], entity.rotation[1], dimension),
+                    nbt_uuid_to_u128(<[i32; 4]>::try_from(uuid_parts).unwrap()), // TODO: maybe this is slow too.
+                    entity.others
+                );
+                entity_list.push(Entity::Mob(e));
+            }
+        }
     }
 }
 
@@ -29,9 +51,9 @@ impl<'a> EntityLoader<'a> for EntityLoaderV3465<'a> {
 
         let mut regions = Vec::<Region>::new();
 
-        regions.extend(get_region_files_in_folder(&overworld_region_folder, "overworld"));
-        regions.extend(get_region_files_in_folder(&nether_region_folder, "the_nether"));
-        regions.extend(get_region_files_in_folder(&end_region_folder, "the_end"));
+        regions.extend(get_region_files_in_folder(&overworld_region_folder, "overworld", RegionType::Entity));
+        regions.extend(get_region_files_in_folder(&nether_region_folder, "the_nether", RegionType::Entity));
+        regions.extend(get_region_files_in_folder(&end_region_folder, "the_end", RegionType::Entity));
 
         regions
     }

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use flate2::read::ZlibDecoder;
 use crate::constants::constants::{MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE, MCA_REGION_SECTOR_SIZE};
 use crate::models::other::position::Position;
-use crate::models::other::region::Region;
+use crate::models::other::region::{Region, RegionType};
 
 pub struct ParsedRegionChunk {
     pub offset: usize,
@@ -12,7 +12,7 @@ pub struct ParsedRegionChunk {
     pub compression_type: u8
 }
 
-pub fn get_region_files_in_folder(folder: &PathBuf, dimension_name: &str) -> Vec<Region> {
+pub fn get_region_files_in_folder(folder: &PathBuf, dimension_name: &str, region_type: RegionType) -> Vec<Region> {
     if !folder.exists() {
         println!("{} does not exist, skipping...", folder.display());
         return Vec::new();
@@ -38,7 +38,8 @@ pub fn get_region_files_in_folder(folder: &PathBuf, dimension_name: &str) -> Vec
         }
         regions.push(Region {
             position: Position::new(dimension_name, region_x.unwrap() as f32, 0f32, region_z.unwrap() as f32),
-            path: file.path().to_path_buf()
+            path: file.path().to_path_buf(),
+            region_type: region_type.clone() // bad maybe?
         })
     }
 
@@ -93,4 +94,12 @@ pub fn uncompress_zlib(data: Vec<u8>) -> Vec<u8> {
     let mut decompressed = Vec::new();
     decoder.read_to_end(&mut decompressed).unwrap();
     decompressed
+}
+
+#[inline(always)]
+pub fn nbt_uuid_to_u128(data: [i32; 4]) -> u128 {
+    ((data[0] as u32 as u128) << 96) |
+        ((data[1] as u32 as u128) << 64) |
+        ((data[2] as u32 as u128) << 32) |
+        (data[3] as u32 as u128)
 }

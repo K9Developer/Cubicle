@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use crate::constants::versions::Version;
 use crate::loaders::loader::Loader;
+use crate::models::entity::entity::Entity;
 use crate::models::other::position::Position;
-use crate::models::other::region::Region;
+use crate::models::other::region::{Region, RegionType};
 use crate::models::world::block::Block;
 use crate::models::world::dimension::Dimension;
 
@@ -21,7 +22,7 @@ pub struct World<'a> {
     unloaded_regions: Vec<Region>
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum WorldType {
     SINGLEPLAYER,
     MULTIPLAYER,
@@ -59,6 +60,8 @@ impl<'a> World<'a> {
     // TODO: Figure out how I decide whats loaded and whats not if entities and blocks dont have the same regions
     pub fn register_regions(&mut self) -> usize {
         self.unloaded_regions = self.loader().block_loader().get_region_files(self.path.clone());
+        self.unloaded_regions.extend(self.loader().entity_loader().get_region_files(self.path.clone()));
+
         self.dimensions = HashMap::from([ //TODO: Dont hardcode this
             ("overworld".to_string(), Dimension::new("overworld".to_string(), self.version)),
             ("the_nether".to_string(), Dimension::new("the_nether".to_string(), self.version)),
@@ -71,10 +74,20 @@ impl<'a> World<'a> {
     pub fn load_region(&mut self, position: Position) {
         for region in self.unloaded_regions.iter() {
             if position == region.position {
-                let chunks = self.loader.block_loader().parse_region(region);
-                let dim = self.dimensions.get_mut(region.position.dimension()).unwrap();
-                dim.set_chunks(chunks);
-                break;
+                match region.region_type {
+                    RegionType::Block => {
+                        println!("Loading block region");
+                        let chunks = self.loader.block_loader().parse_region(region);
+                        let dim = self.dimensions.get_mut(region.position.dimension()).unwrap();
+                        dim.set_chunks(chunks);
+                    },
+                    RegionType::Entity => {
+                        println!("Loading entity region");
+                        let entities = self.loader().entity_loader().parse_region(region);
+                        let dim = self.dimensions.get_mut(region.position.dimension()).unwrap();
+                        dim.add_entities(entities);
+                    }
+                }
             }
         }
     }
@@ -89,6 +102,20 @@ impl<'a> World<'a> {
         chunk.unwrap().block_store().get_block_at_index(relative_coords.to_index(self.version))
     }
 
-    // TODO: entity loading
+    // Very temporary until selectors
+    pub fn get_entities_of_id(&self, id: &str) -> Vec<&Entity> {
+        let mut selected_entities = Vec::<&Entity>::new();
+        for dim in self.dimensions.values() {
+            for entity in dim.entities() {
+                match entity {
+                    Entity::Player(player) => {},
+                    Entity::Mob(mob) => {
+                        if mob.id() == id {selected_entities.push(entity);}
+                    }
+                }
+            }
+        }
+        selected_entities
+    }
 
 }

@@ -1,4 +1,4 @@
-use cubicle::constants::versions::Version;
+use cubicle::constants::versions::{Version, VersionManager};
 use cubicle::models::other::position::Position;
 use cubicle::models::world::world::{World, WorldType};
 use std::time::Instant;
@@ -6,7 +6,8 @@ use std::time::Instant;
 // TODO: Finish all todos before doing more versions!
 
 fn main() {
-    let v = Version::new("1.20.1", WorldType::SINGLEPLAYER);
+    // let v = Version::new("1.20.1", WorldType::SINGLEPLAYER);
+    let v = VersionManager::get("1.20.1", WorldType::SINGLEPLAYER);
     let mut w = World::new(
         "C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test"
             .parse()
@@ -22,4 +23,8 @@ fn main() {
     println!("Elapsed: {:?}", duration);
     let b = w.get_block_at_position(Position::new("overworld", -504f32, 62f32, -504f32));
     println!("Block at position: {:?}", b);
+    let es = w.get_entities_of_id("minecraft:cow");
+    for ent in es {
+        println!("A cow is at: {:?} {:?} {:?}", ent.base().position().x(), ent.base().position().y(), ent.base().position().z());
+    }
 }
