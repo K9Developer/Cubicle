@@ -10,7 +10,7 @@ pub struct Loader<'a> {
 // player_loader
 }
 
-// TODO: Also make it possible to detect data version automatically - by that version too maybe?
+// TODO: Also make it possible to detect data version automatically - by that, version too maybe?
 impl<'a> Loader<'a> {
     pub fn new(version: &'a Version) -> Self {
         Self {

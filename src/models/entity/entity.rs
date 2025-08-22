@@ -1,11 +1,7 @@
-use std::collections::HashMap;
-use fastnbt::Value;
 use crate::models::other::inventory::Inventory;
 use crate::models::other::position::{EntityPosition};
 use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
-
-// TODO: Actually complete the Entities
 
 #[derive(Debug)]
 pub struct GenericEntity {

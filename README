@@ -65,7 +65,6 @@ fn main() {
 }
 
 Other notes:
-* We'll have NBT_STRUCTURES, there we'll have it per version (the nbt structure). Then each new() func gets the nbt structures too and sets a var so it will use that structure to load
-* Have an EntityStore per Dimension, then each chunk can have its own vec of ref entities
-
 * For faster filtering, etc. we'll have a bunch of index(s) with pointers to stuff matching it for example entity name bank will be a hashmap of entity name as key and list of entity refs as value that match that criteria - thats just for faster access
+
+Up next: biomes

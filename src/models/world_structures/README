@@ -1,0 +1,4 @@
+This is actual structures like village, etc.
+
+Currently we are using generics since there are WAYY to many structrues to make specific types and funcs for each.
+Itll also be slower
