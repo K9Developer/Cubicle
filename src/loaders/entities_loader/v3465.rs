@@ -10,6 +10,7 @@ use crate::constants::versions::Version;
 use crate::loaders::utils::{get_region_files_in_folder, nbt_uuid_to_u128, parse_region_file, uncompress_zlib};
 use crate::models::entity::entity::{Entity, EntityType, MobEntity};
 use crate::models::other::position::EntityPosition;
+use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
 use crate::models::world::world::WorldType;
 // TODO: Support other dimensions (custom paths)
@@ -33,7 +34,7 @@ impl<'a> EntityLoaderV3465<'a> {
                     entity.is_on_ground,
                     EntityPosition::new(entity.position[0], entity.position[1], entity.position[2], entity.rotation[0], entity.rotation[1], dimension),
                     nbt_uuid_to_u128(<[i32; 4]>::try_from(uuid_parts).unwrap()), // TODO: maybe this is slow too.
-                    entity.others
+                    Properties::new(entity.others)
                 );
                 entity_list.push(Entity::Mob(e));
             }

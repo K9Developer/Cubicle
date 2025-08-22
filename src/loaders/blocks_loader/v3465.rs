@@ -12,7 +12,11 @@ use crate::models::world::world::WorldType;
 use crate::utils::bit_length;
 use fastnbt::Value;
 use std::cmp::{max, min};
+use std::collections::HashMap;
 use std::path::PathBuf;
+use crate::models::other::properties::Properties;
+use crate::models::world::stores::structure_store::StructureStoreReference;
+use crate::models::world_structures::generic_structure::{BoundingBox, GenericChildStructure, GenericParentStructure};
 // TODO: Support other dimensions (custom paths)
 
 pub(super) struct BlockLoaderV3465<'a> {
@@ -25,7 +29,7 @@ impl<'a> BlockLoaderV3465<'a> {
     }
 
     // TODO: Optimize the block palette loading
-    unsafe fn populate_chunk(&self, chunk_obj: &mut Chunk<'a>, chunk_nbt: NBTChunk) {
+    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk<'a>, chunk_nbt: NBTChunk) {
         let block_store = chunk_obj.block_store_mut();
         let section_block_count = (self.version.data.section_height * self.version.data.chunk_size * self.version.data.chunk_size) as usize;
 
@@ -74,6 +78,47 @@ impl<'a> BlockLoaderV3465<'a> {
             }
         }
     }
+
+    fn populate_chunk_with_structures(&self, chunk_obj: &mut Chunk<'a>, chunk_nbt: &NBTChunk) -> Vec<GenericParentStructure> {
+        let mut new_structures = Vec::<GenericParentStructure>::new();
+
+        // refs
+        for (structure_id, chunk_refs_val) in chunk_nbt.structures.references.iter()  {
+            if let Value::LongArray(chunk_refs_val) = chunk_refs_val {
+                let chunk_refs: &[i64] = &*chunk_refs_val;
+                for chunk_ref in chunk_refs {
+                    chunk_obj.add_structure(StructureStoreReference::new(chunk_ref.clone(), structure_id.clone()));
+                }
+            }
+        }
+
+        // actual
+        for (_, structure) in chunk_nbt.structures.starts.iter() {
+            let mut children = Vec::<GenericChildStructure>::new();
+
+            if let Some(nbt_children) = &structure.children {
+                for child in nbt_children {
+                    children.push(GenericChildStructure::new(
+                        &*child.id,
+                        BoundingBox::from_BB(child.bounding_box.clone(), chunk_obj.position().dimension()),
+                        Properties::new(child.others.clone()) // TODO: I really dont like this - its a structure too so very slow. The thing is chunk_nbt is owned by the other func
+                    ));
+                }
+            }
+
+
+            let parent = GenericParentStructure::new(
+                (*chunk_obj.position()).clone(), // might be bad? - we could get chunk_x and chunk_z
+                &*structure.id,
+                children,
+                Properties::new(structure.others.clone())
+            );
+
+            new_structures.push(parent);
+        }
+
+        new_structures
+    }
 }
 
 impl<'a> BlockLoader<'a> for BlockLoaderV3465<'a> {
@@ -92,20 +137,25 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465<'a> {
         regions
     }
 
-    fn parse_region(&self, region: &Region) -> Vec<Chunk<'a>> {
+    fn parse_region(&self, region: &Region) -> (Vec<Chunk<'a>>, HashMap<i64, Vec<GenericParentStructure>>) {
         let parsed_chunks = parse_region_file(region);
+
         let mut chunks = Vec::with_capacity(parsed_chunks.len());
+        let mut new_structures = HashMap::new();
+
         for parsed_chunk in parsed_chunks {
-            let chunk = self.parse_chunk(
+            let chunk_data = self.parse_chunk(
                 parsed_chunk.raw_bytes,
                 parsed_chunk.compression_type,
                 region.position.dimension(),
             );
-            if chunk.is_some() {
-                chunks.push(chunk.unwrap());
+            if let Some(chunk_data) = chunk_data {
+                let chunk_ref = chunk_data.0.position().to_chunk_ref();
+                chunks.push(chunk_data.0);
+                new_structures.entry(chunk_ref).or_insert_with(Vec::new).extend(chunk_data.1);
             }
         }
-        chunks
+        (chunks, new_structures)
     }
 
     fn parse_chunk(
@@ -113,7 +163,7 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465<'a> {
         data: Vec<u8>,
         compression_type: u8,
         dimension: &str,
-    ) -> Option<Chunk<'a>> {
+    ) -> Option<(Chunk<'a>, Vec<GenericParentStructure>)> {
         let mut chunk_data = data;
 
         match compression_type {
@@ -138,7 +188,9 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465<'a> {
             Tick::new(chunk_nbt.last_update as usize),
             chunk_nbt.status.clone(),
         );
-        unsafe { self.populate_chunk(&mut chunk, chunk_nbt); }
-        Some(chunk)
+
+        let structures = self.populate_chunk_with_structures(&mut chunk, &chunk_nbt);
+        unsafe { self.populate_chunk_with_blocks(&mut chunk, chunk_nbt); }
+        Some((chunk, structures))
     }
 }

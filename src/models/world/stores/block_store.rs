@@ -33,6 +33,8 @@ impl<'a> BlockStore<'a> {
         }
     }
 
+    pub fn palette(&self) -> &FastSet<Block> { &self.palette }
+
     // returns new index
     #[inline(always)]
     pub fn add_block_to_palette(&mut self, block: Block) -> usize {

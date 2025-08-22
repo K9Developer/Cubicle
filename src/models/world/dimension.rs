@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
-use crate::models::other::structure::Structure;
+use crate::models::world_structures::generic_structure::GenericParentStructure;
 use crate::models::world::chunk::Chunk;
+use crate::models::world::stores::structure_store::StructureStore;
 
 pub struct Dimension<'a> {
     dimension_id: String,
@@ -10,7 +11,8 @@ pub struct Dimension<'a> {
 
     chunks: HashMap<(i32,i32), Chunk<'a>>,
     entity_store: Vec<Entity>,
-    structure_store: Vec<Structure>,
+
+    structure_store: StructureStore,
 }
 
 impl <'a> Dimension<'a> {
@@ -20,10 +22,12 @@ impl <'a> Dimension<'a> {
             version,
             chunks: HashMap::new(),
             entity_store: Vec::new(),
-            structure_store: Vec::new(),
+            structure_store: StructureStore::new(),
         }
     }
 
+    pub fn structure_store(&self) -> &StructureStore { &self.structure_store }
+    pub fn structure_store_mut(&mut self) -> &mut StructureStore { &mut self.structure_store }
     pub fn chunk(&self, chunk_position: (i32, i32)) -> Option<&Chunk<'a>> {
         self.chunks.get(&chunk_position)
     }
@@ -54,8 +58,4 @@ impl <'a> Dimension<'a> {
         self.entity_store.extend(entities);
     }
 
-    pub fn add_structure(&mut self, structure: Structure) -> &Structure {
-        self.structure_store.push(structure);
-        self.structure_store.last().unwrap()
-    }
 }

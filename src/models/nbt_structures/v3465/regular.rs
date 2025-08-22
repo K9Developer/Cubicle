@@ -26,7 +26,7 @@ pub struct NBTChunk {
     pub block_entities: Vec<NBTBlockEntity>,
     pub fluid_ticks: Vec<NBTTileTick>,
     pub block_ticks: Vec<NBTTileTick>,
-    pub structures: NBTStructure,
+    pub structures: NBTStructureList,
 
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
@@ -88,7 +88,33 @@ pub struct NBTTileTick {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct NBTStructure { // TODO: DO THIS
+pub struct NBTStructureList {
+    #[serde(rename="References")]
+    pub references: HashMap<String, Value>,
+    pub starts: HashMap<String, NBTStructure>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct NBTStructure {
+    #[serde(rename="ChunkX")]
+    pub chunk_x: i32,
+    #[serde(rename="ChunkZ")]
+    pub chunk_z: i32,
+    #[serde(rename="id")]
+    pub id: String,
+    #[serde(rename="Children")]
+    pub children: Option<Vec<NBTSubStructure>>,
+
     #[serde(flatten)]
     pub others: HashMap<String, Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct NBTSubStructure {
+    pub id: String,
+    #[serde(rename="BB")]
+    pub bounding_box: Value, // TODO: This should work as a [i32; 6] but it doesnt. Fix it and then go to the block loader and change the BoundingBox::from_BB impl and use
+
+    #[serde(flatten)]
+    pub others: HashMap<String, Value>
 }

@@ -1,10 +1,11 @@
 use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
 use crate::models::other::position::Position;
-use crate::models::other::structure::Structure;
 use crate::models::other::tick::Tick;
-use crate::models::world::block_store::BlockStore;
-
+use crate::models::world::stores::block_store;
+use crate::models::world::stores::block_store::BlockStore;
+use crate::models::world::stores::structure_store::StructureStoreReference;
+use crate::models::world_structures::generic_structure::GenericParentStructure;
 // TODO: have multiple selector like EntitySelector, then have stuff like remove_entity(selector: EntitySelector) - this will be used in filters too.
 
 #[derive(Debug)]
@@ -17,7 +18,7 @@ pub struct Chunk<'a> {
 
     block_store: BlockStore<'a>,
     entities: Vec<&'a Entity>,
-    structures: Vec<&'a Structure>,
+    structures: Vec<StructureStoreReference>,
 
     version: &'a Version,
 }
@@ -70,7 +71,7 @@ impl<'a> Chunk<'a> {
     pub fn entities(&mut self) -> &Vec<&'a Entity> {
         &self.entities
     }
-    pub fn structures(&mut self) -> &Vec<&'a Structure> {
+    pub fn structures(&mut self) -> &Vec<StructureStoreReference> {
         &self.structures
     }
 
@@ -93,7 +94,5 @@ impl<'a> Chunk<'a> {
     pub fn add_entity(&mut self, entity: &'static Entity) {
         self.entities.push(entity);
     }
-    pub fn add_structure(&mut self, structure: &'static Structure) {
-        self.structures.push(structure);
-    }
+    pub fn add_structure(&mut self, structure: StructureStoreReference) { self.structures.push(structure); }
 }

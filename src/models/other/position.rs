@@ -12,7 +12,7 @@ fn div_floor(a: i32, b: i32) -> i32 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Position {
     x: f32,
     y: f32,
@@ -62,7 +62,7 @@ impl Position {
         Some(((self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2)).sqrt())
     }
 
-    pub fn to_block_coords(&self) -> (i32, i32, i32) {
+    pub fn rounded_coords(&self) -> (i32, i32, i32) {
         (self.x.floor() as i32, self.y.floor() as i32, self.z.floor() as i32)
     }
 
@@ -83,6 +83,21 @@ impl Position {
             chunk_position,
             Position::new(&*self.dimension, self.i_x().rem_euclid(chunk_size) as f32, self.y(), self.i_x().rem_euclid(chunk_size) as f32)
         )
+    }
+
+    pub fn to_block_coords(&self, chunk_size: i32) -> Position { // TODO: Add height maps so i can get current ground Y
+        Position::new(self.dimension(), (self.i_x() * chunk_size) as f32, (self.i_y() * chunk_size) as f32, (self.i_z() * chunk_size) as f32)
+    }
+
+    pub fn to_chunk_ref(&self) -> i64 {
+        let x = self.i_x();
+        let z = self.i_z();
+        i64::from_be_bytes({
+            let mut b = [0u8; 8];
+            b[..4].copy_from_slice(&x.to_le_bytes()); // A2 FF FF FF
+            b[4..].copy_from_slice(&z.to_le_bytes()); // 40 00 00 00
+            b
+        })
     }
 }
 
@@ -188,7 +203,7 @@ mod tests {
         assert_eq!(p.i_x(), 1);
         assert_eq!(p.i_y(), -1);
         assert_eq!(p.i_z(), -2);
-        assert_eq!(p.to_block_coords(), (1, -1, -2));
+        assert_eq!(p.rounded_coords(), (1, -1, -2));
     }
 
     #[test]
@@ -251,6 +266,6 @@ mod tests {
         assert!((p.x() - 1.25).abs() < 1e-6);
         assert!((p.y() + 2.75).abs() < 1e-6);
         assert!((p.z() - 3.5).abs() < 1e-6);
-        assert_eq!(p.to_block_coords(), (1, -3, 3));
+        assert_eq!(p.rounded_coords(), (1, -3, 3));
     }
 }

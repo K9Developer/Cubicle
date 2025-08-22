@@ -77,9 +77,10 @@ impl<'a> World<'a> {
                 match region.region_type {
                     RegionType::Block => {
                         println!("Loading block region");
-                        let chunks = self.loader.block_loader().parse_region(region);
+                        let (chunks, new_structures) = self.loader.block_loader().parse_region(region); // TODO: This will return a vec of structures as well
                         let dim = self.dimensions.get_mut(region.position.dimension()).unwrap();
                         dim.set_chunks(chunks);
+                        dim.structure_store_mut().add_structures(new_structures);
                     },
                     RegionType::Entity => {
                         println!("Loading entity region");

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use fastnbt::Value;
 use crate::models::other::inventory::Inventory;
 use crate::models::other::position::{EntityPosition};
+use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
 
 // TODO: Actually complete the Entities
@@ -26,14 +27,15 @@ pub enum EntityType {
 #[derive(Debug)]
 pub struct PlayerEntity { // TODO
     base: GenericEntity,
-    inventory: Inventory
+    inventory: Inventory,
+    extra: Properties
 }
 
 #[derive(Debug)]
 pub struct MobEntity {
     base: GenericEntity,
     id: String,
-    extra: HashMap<String, Value>
+    extra: Properties
 }
 
 #[derive(Debug)]
@@ -43,7 +45,7 @@ pub enum Entity {
 }
 
 impl Entity {
-    pub fn new(entity_type: EntityType, air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f64,f64,f64), is_on_ground: bool, position: EntityPosition, uuid: u128) -> Self {
+    pub fn new(entity_type: EntityType, air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f64,f64,f64), is_on_ground: bool, position: EntityPosition, uuid: u128, extra: Properties) -> Self {
         let generic = GenericEntity::new(
             air_remaining,
             distance_fallen,
@@ -60,7 +62,8 @@ impl Entity {
                 Entity::Player(
                     PlayerEntity {
                         base: generic,
-                        inventory: Inventory{}
+                        inventory: Inventory{},
+                        extra
                     }
                 )
             },
@@ -69,7 +72,7 @@ impl Entity {
                     MobEntity {
                         base: generic,
                         id: "cubicle:null".to_string(),
-                        extra: HashMap::new()
+                        extra
                     }
                 )
             }
@@ -123,7 +126,7 @@ impl GenericEntity {
 }
 
 impl MobEntity {
-    pub fn new(id: String, air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f64,f64,f64), is_on_ground: bool, position: EntityPosition, uuid: u128, extra: HashMap<String, Value>) -> Self {
+    pub fn new(id: String, air_remaining: Tick, distance_fallen: f32, fire_ticks_left: Tick, is_invulnerable: bool, velocity_vector: (f64,f64,f64), is_on_ground: bool, position: EntityPosition, uuid: u128, extra: Properties) -> Self {
         Self {
             base: GenericEntity::new(air_remaining, distance_fallen, fire_ticks_left, is_invulnerable, velocity_vector, is_on_ground, position, uuid),
             id,

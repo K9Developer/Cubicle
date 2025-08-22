@@ -1,14 +1,15 @@
+use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::fmt;
 use fastnbt::Value;
-
+use crate::models::other::properties::Properties;
 // TODO: Add proper errors, using an error struct
 // TODO: Comparison of blocks is very slow since it has to check the whole extra thing - make some kind of hash?
 
 #[derive(Clone)]
 pub struct Block {
     name: String,
-    extra: HashMap<String, Value>,
+    extra: Properties,
     null_flag: bool,
 }
 
@@ -17,7 +18,7 @@ impl Block {
         // TODO: Enforce a namespace in a faster way
         Block {
             name: if name.contains(":") { name.to_string() } else { ("minecraft:".to_owned() + name).to_owned() },
-            extra: extra.unwrap_or_default(),
+            extra: Properties::new(extra.unwrap_or_default()),
             null_flag: false,
         }
     }
@@ -25,7 +26,7 @@ impl Block {
     pub fn new_null() -> Block {
         Block {
             name: "cubicle:null_block".to_string(),
-            extra: HashMap::new(),
+            extra: Properties::new(HashMap::new()),
             null_flag: true,
         }
     }
@@ -33,101 +34,9 @@ impl Block {
     pub fn name(&self) -> & str { &self.name }
     pub fn namespace(&self) -> & str { self.name.split(':').next().unwrap() }
     pub fn id(&self) -> & str { self.name.split(':').nth(1).unwrap() }
-    pub fn properties(&self) -> &HashMap<String, Value> { &self.extra }
-    pub fn mut_properties(&mut self) -> &mut HashMap<String, Value> { &mut self.extra }
+    pub fn properties(&self) -> &Properties { &self.extra }
+    pub fn properties_mut(&mut self) -> &mut Properties { &mut self.extra }
     pub fn is_null(&self) -> bool { self.null_flag }
-    pub fn property(&self, path: &str) -> Option<Value> {
-        let mut parts = path.split('.').peekable();
-        let mut current_node = self.properties().get(parts.next()?)?;
-
-        while let Some(part) = parts.next() {
-            let is_last = parts.peek().is_none();
-
-            match current_node {
-
-                Value::ByteArray(a) => {
-                    if !is_last { return None };
-                    let idx: usize = part.parse().ok()?;
-                    return Some(Value::Byte(*a.get(idx)?))
-                }
-                Value::IntArray(a) => {
-                    if !is_last { return None };
-                    let idx: usize = part.parse().ok()?;
-                    return Some(Value::Int(*a.get(idx)?))
-                }
-                Value::LongArray(a) => {
-                    if !is_last { return None };
-                    let idx: usize = part.parse().ok()?;
-                    return Some(Value::Long(*a.get(idx)?))
-                }
-                Value::List(a) => {
-                    let idx: usize = part.parse().ok()?;
-                    current_node = a.get(idx)?;
-                }
-                Value::Compound(m) => {
-                    current_node = m.get(part)?;
-                }
-                _ => { Some(current_node.clone()); }
-            }
-        }
-
-        Some(current_node.clone())
-    }
-
-    pub fn set_property(&mut self, path: &str, value: Value) -> Option<bool> {
-        let mut parts = path.split('.').peekable();
-        let mut current_node = self.mut_properties().get_mut(parts.next()?)?;
-
-        while let Some(part) = parts.next() {
-            let is_last = parts.peek().is_none();
-
-            match current_node {
-
-                Value::ByteArray(a) => {
-                    if !is_last { return None };
-                    let idx: usize = part.parse().ok()?;
-                    match value {
-                        Value::Byte(gv) => { a[idx] = gv; }
-                        _ => { return None; }
-                    }
-                }
-                Value::IntArray(a) => {
-                    if !is_last { return None };
-                    let idx: usize = part.parse().ok()?;
-                    match value {
-                        Value::Int(gv) => { a[idx] = gv; }
-                        _ => { return None; }
-                    }
-                }
-                Value::LongArray(a) => {
-                    if !is_last { return None };
-                    let idx: usize = part.parse().ok()?;
-                    match value {
-                        Value::Long(gv) => { a[idx] = gv; }
-                        _ => { return None; }
-                    }
-                }
-                Value::List(a) => {
-                    let idx: usize = part.parse().ok()?;
-                    if is_last {
-                        a[idx] = value;
-                        return Some(true);
-                    }
-                    current_node = a.get_mut(idx)?;
-                }
-                Value::Compound(m) => {
-                    if is_last {
-                        m.insert(part.parse().unwrap(), value);
-                        return Some(true);
-                    }
-                    current_node = m.get_mut(part)?;
-                }
-                _ => { Some(current_node.clone()); }
-            }
-        }
-
-        Some(true)
-    }
 }
 
 impl fmt::Debug for Block {
@@ -143,9 +52,8 @@ impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Block(name: {}, properties: {} entries)",
+            "Block(name: {})",
             self.name,
-            self.extra.len()
         )
     }
 }
@@ -165,6 +73,7 @@ impl Eq for Block {}
 mod tests {
     use super::*;
     use std::collections::HashMap;
+    use std::time::Instant;
     use fastnbt::Value;
 
     #[test]
@@ -217,13 +126,15 @@ mod tests {
             ])),
         );
 
+        let mut props = b.properties_mut();
+
         assert_eq!(
-            b.property("items.1.ench.0.id"),
+            props.get("items.1.ench.0.id"),
             Some(Value::String("minecraft:fortune".into()))
         );
 
         assert_eq!(
-            b.set_property(
+            props.set(
                 "items.1.ench.0.id",
                 Value::Compound(HashMap::from([(
                     "a".to_string(),
@@ -234,7 +145,7 @@ mod tests {
         );
 
         assert_eq!(
-            b.property("items.1.ench.0.id.a"),
+            props.get("items.1.ench.0.id.a"),
             Some(Value::String("minecraft:chest".into()))
         );
     }
