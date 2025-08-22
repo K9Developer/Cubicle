@@ -13,6 +13,8 @@ TODO: See what happens when a chunk contains at least 128 blocks (8 bits) as the
 TODO: Biomes
 
 TODO: In the future add an extension that will allow for more structure control like (pesudo) `(structure as Village).houses()`
+
+TODO: Have better entity types. Things with similar stuff. Like Item, Zombie / Skeleton, etc., Player, etc.
 */
 
 
