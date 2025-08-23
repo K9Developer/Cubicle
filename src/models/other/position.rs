@@ -1,5 +1,6 @@
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
+use crate::constants::constants::BIOME_CELL_SIZE;
 use crate::constants::versions::Version;
 
 fn div_floor(a: i32, b: i32) -> i32 {
@@ -72,6 +73,16 @@ impl Position {
         if self.i_x() > chunk_size || self.i_z() > chunk_size { panic!("Chunk size out of range"); }
         let height = self.i_y() + version.data.lowest_y.abs();
         (height * chunk_size * chunk_size + self.i_x() * chunk_size + self.i_z()) as usize
+    }
+
+    #[inline]
+    pub fn to_biome_index(&self, version: &Version) -> usize {
+        let chunk_size = version.data.chunk_size;
+        let chunk_biome_size = chunk_size / BIOME_CELL_SIZE;
+        if self.i_x() > chunk_size || self.i_z() > chunk_size { panic!("Chunk size out of range"); }
+        let height = (version.data.lowest_y.abs() / BIOME_CELL_SIZE) + self.i_y();
+        println!("height: {}", height);
+        (height * chunk_biome_size * chunk_biome_size + self.i_x() * chunk_biome_size + self.i_z()) as usize
     }
 
     #[inline]

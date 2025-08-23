@@ -2,6 +2,7 @@ use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
 use crate::models::other::position::Position;
 use crate::models::other::tick::Tick;
+use crate::models::world::stores::biome_store::BiomeStore;
 use crate::models::world::stores::block_store;
 use crate::models::world::stores::block_store::BlockStore;
 use crate::models::world::stores::structure_store::StructureStoreReference;
@@ -17,6 +18,8 @@ pub struct Chunk<'a> {
     status: String,
 
     block_store: BlockStore<'a>,
+    biome_store: BiomeStore<'a>,
+
     entities: Vec<&'a Entity>,
     structures: Vec<StructureStoreReference>,
 
@@ -42,6 +45,8 @@ impl<'a> Chunk<'a> {
             status,
 
             block_store: BlockStore::new(&version),
+            biome_store: BiomeStore::new(&version),
+
             entities: Vec::new(),
             structures: Vec::new(),
         }
@@ -62,12 +67,14 @@ impl<'a> Chunk<'a> {
     pub fn status(&self) -> &String {
         &self.status
     }
+    pub fn stores(&self) -> (&BlockStore<'a>, &BiomeStore<'a>) { (&self.block_store, &self.biome_store) }
+    pub fn stores_mut(&mut self) -> (&mut BlockStore<'a>, &mut BiomeStore<'a>) { (&mut self.block_store, &mut self.biome_store) }
     pub fn block_store(&self) -> &BlockStore<'a> {
         &self.block_store
     }
-    pub fn block_store_mut(&mut self) -> &mut BlockStore<'a> {
-        &mut self.block_store
-    }
+    pub fn block_store_mut(&mut self) -> &mut BlockStore<'a> { &mut self.block_store }
+    pub fn biome_store(&self) -> &BiomeStore<'a> { &self.biome_store }
+    pub fn biome_store_mut(&mut self) -> &mut BiomeStore<'a> { &mut self.biome_store }
     pub fn entities(&mut self) -> &Vec<&'a Entity> {
         &self.entities
     }

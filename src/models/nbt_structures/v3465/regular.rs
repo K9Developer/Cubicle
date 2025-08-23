@@ -59,7 +59,7 @@ pub struct NBTBlockPalette {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NBTBiomeStates {
-    pub palette: Vec<String>,
+    pub palette: Option<Vec<String>>,
     pub data: Option<Value>,
 }
 

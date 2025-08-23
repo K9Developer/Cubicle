@@ -65,6 +65,4 @@ fn main() {
 }
 
 Other notes:
-* For faster filtering, etc. we'll have a bunch of index(s) with pointers to stuff matching it for example entity name bank will be a hashmap of entity name as key and list of entity refs as value that match that criteria - thats just for faster access
-
-Up next: biomes
+* For faster filtering, etc. we'll have a bunch of index(s) with pointers to stuff matching it for example entity name index will be a hashmap of entity name as key and list of entity refs as value that match that criteria - thats just for faster access

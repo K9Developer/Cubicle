@@ -1,8 +1,8 @@
 use super::loader::BlockLoader;
-use crate::constants::constants::ZLIB_COMPRESSION_TYPE;
+use crate::constants::constants::{BIOME_CELL_SIZE, ZLIB_COMPRESSION_TYPE};
 use crate::constants::versions::Version;
 use crate::loaders::utils::{get_region_files_in_folder, parse_region_file, uncompress_zlib};
-use crate::models::nbt_structures::v3465::regular::{NBTBlockPalette, NBTChunk};
+use crate::models::nbt_structures::v3465::regular::{NBTBlockPalette, NBTChunk, NBTSection};
 use crate::models::other::position::Position;
 use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
@@ -15,6 +15,8 @@ use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use crate::models::other::properties::Properties;
+use crate::models::world::stores::biome_store::BiomeStore;
+use crate::models::world::stores::block_store::BlockStore;
 use crate::models::world::stores::structure_store::StructureStoreReference;
 use crate::models::world_structures::generic_structure::{BoundingBox, GenericChildStructure, GenericParentStructure};
 // TODO: Support other dimensions (custom paths)
@@ -28,54 +30,95 @@ impl<'a> BlockLoaderV3465<'a> {
         Block::new(nbt_block.name.as_ref(), nbt_block.properties)
     }
 
+    unsafe fn parse_longs(&self, longs: &[u64], bits_per_entry: u32, max_entries: usize, index_replacement_map: &[usize], output_slice: &mut [usize]) {
+        let entries_per_long = (u64::BITS / bits_per_entry) as usize;
+        let mut current_entry_count = 0;
+        let mask: usize = (1 << bits_per_entry) - 1;
+
+        for &long_value in longs {
+            let mut shifted_value = long_value as usize;
+            let blocks_to_process = min(entries_per_long, max_entries - current_entry_count);
+
+
+            for _ in 0..blocks_to_process {
+                let old_palette_index = shifted_value & mask;
+                *output_slice.get_unchecked_mut(current_entry_count) = *index_replacement_map.get_unchecked(old_palette_index);
+                shifted_value >>= bits_per_entry;
+                current_entry_count += 1;
+            }
+        }
+    }
+
     // TODO: Optimize the block palette loading
+    unsafe fn parse_section_blocks(&self, section: NBTSection, block_store: &mut BlockStore, section_block_count: usize) {
+        let Some(block_palette) = section.block_states.palette else { return; };
+
+        let mut index_replacement_map = Vec::with_capacity(block_palette.len());
+        let old_palette_len = block_palette.len();
+
+        let mut first_item_new_index = 0;
+
+        for nbt_block in block_palette.into_iter() {
+            let new_index = block_store.add_block_to_palette(Block::new(&nbt_block.name, nbt_block.properties));
+            if first_item_new_index == 0 { first_item_new_index = new_index; }
+            index_replacement_map.push(new_index);
+        }
+
+        let start = ((section.y-self.version.data.lowest_y/self.version.data.section_height) * section_block_count as i32) as usize;
+        let end = start + section_block_count;
+        let indices = block_store.indices_slice_mut();
+        let section_indices: &mut [usize] = &mut indices[start..end];
+
+        if let Some(Value::LongArray(arr)) = section.block_states.data.as_ref() {
+            let section_data_i64: &[i64] = &*arr;
+            let longs: &[u64] = unsafe { std::slice::from_raw_parts(section_data_i64.as_ptr() as *const u64, section_data_i64.len(), ) };
+            let bits_per_block: u32 = max(bit_length(old_palette_len as i32 - 1), 4);
+
+            self.parse_longs(longs, bits_per_block, section_block_count, index_replacement_map.as_slice(), section_indices);
+        } else {
+            section_indices.fill(first_item_new_index)
+        }
+    }
+
+    unsafe fn parse_section_biomes(&self, section: &NBTSection, biome_store: &mut BiomeStore, section_biome_count: usize) {
+        let Some(biome_palette) = section.biomes.palette.clone() else { return; };
+
+        let mut index_replacement_map = Vec::with_capacity(biome_palette.len());
+        let old_palette_len = biome_palette.len();
+
+        let mut first_item_new_index = 0;
+
+        for nbt_biome in biome_palette.into_iter() {
+            let new_index = biome_store.add_biome_to_palette(nbt_biome);
+            if first_item_new_index == 0 { first_item_new_index = new_index; }
+            index_replacement_map.push(new_index);
+        }
+
+        let start = ((section.y-self.version.data.lowest_y/self.version.data.section_height) * section_biome_count as i32) as usize;
+        let end = start + section_biome_count;
+        let indices = biome_store.indices_slice_mut();
+        let section_indices: &mut [usize] = &mut indices[start..end];
+
+        if let Some(Value::LongArray(arr)) = section.biomes.data.as_ref() {
+            let section_data_i64: &[i64] = &*arr;
+            let longs: &[u64] = unsafe { std::slice::from_raw_parts(section_data_i64.as_ptr() as *const u64, section_data_i64.len(), ) };
+            let bits_per_biome: u32 = bit_length(old_palette_len as i32 - 1);
+
+            self.parse_longs(longs, bits_per_biome, section_biome_count, index_replacement_map.as_slice(), section_indices);
+        } else {
+            section_indices.fill(first_item_new_index)
+        }
+    }
+
     unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk<'a>, chunk_nbt: NBTChunk) {
-        let block_store = chunk_obj.block_store_mut();
+        let (block_store, biome_store) = chunk_obj.stores_mut();
+
         let section_block_count = (self.version.data.section_height * self.version.data.chunk_size * self.version.data.chunk_size) as usize;
+        let section_biome_count = section_block_count / BIOME_CELL_SIZE.pow(3) as usize;
 
         for section in chunk_nbt.sections {
-
-            let Some(block_palette) = section.block_states.palette else { continue; };
-
-            let mut index_replacement_map = Vec::with_capacity(block_palette.len());
-            let old_palette_len = block_palette.len();
-
-            for nbt_block in block_palette.into_iter() {
-                let new_index = block_store.add_block_to_palette(Block::new(&nbt_block.name, nbt_block.properties));
-                index_replacement_map.push(new_index);
-            }
-
-            if let Some(Value::LongArray(arr)) = section.block_states.data.as_ref() {
-                let section_data_i64: &[i64] = &*arr;
-                let longs: &[u64] = unsafe {
-                    std::slice::from_raw_parts(
-                        section_data_i64.as_ptr() as *const u64,
-                        section_data_i64.len(),
-                    )
-                };
-                let bits_per_block: u32 = max(bit_length(old_palette_len as i32 - 1), 4);
-                let blocks_per_long = (u64::BITS / bits_per_block) as usize;
-                let mask: usize = (1 << bits_per_block) - 1;
-
-                let mut relative_section_block_index = 0;
-                let start = ((section.y-self.version.data.lowest_y/16) * section_block_count as i32) as usize;
-                let end = start + section_block_count;
-
-                let indices = block_store.indices_slice_mut();
-                let section_indices: &mut [usize] = &mut indices[start..end];
-
-                for &long_value in longs {
-                    let mut shifted_value = long_value as usize;
-                    let blocks_to_process = min(blocks_per_long, section_block_count - relative_section_block_index);
-
-                    for _ in 0..blocks_to_process {
-                        let old_palette_index = shifted_value & mask;
-                        *section_indices.get_unchecked_mut(relative_section_block_index) = *index_replacement_map.get_unchecked(old_palette_index);
-                        shifted_value >>= bits_per_block;
-                        relative_section_block_index += 1;
-                    }
-                }
-            }
+            self.parse_section_biomes(&section, biome_store, section_biome_count);
+            self.parse_section_blocks(section, block_store, section_block_count);
         }
     }
 
