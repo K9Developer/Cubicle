@@ -37,8 +37,8 @@ fn main() {
     let end = start.elapsed();
     println!("Time elapsed in load_region() is: {:?}", end);
 
-    // let b = w.get_block_at_position(Position::new("overworld", -504f32, 62f32, -504f32));
-    // println!("Block at position: {:?}", b);
+    let b = w.get_block_at_position(Position::new("overworld", -504f32, 62f32, -504f32));
+    println!("Block at position: {:?}", b);
     // let biome = w.dimension("overworld").chunk((-32, -32)).unwrap().biome_store().get_biome_at_block_position(
     //     Position::new("overworld", 0., 0., 0.)
     // );

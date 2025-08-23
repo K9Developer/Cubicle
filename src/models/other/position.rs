@@ -81,7 +81,6 @@ impl Position {
         let chunk_biome_size = chunk_size / BIOME_CELL_SIZE;
         if self.i_x() > chunk_size || self.i_z() > chunk_size { panic!("Chunk size out of range"); }
         let height = (version.data.lowest_y.abs() / BIOME_CELL_SIZE) + self.i_y();
-        println!("height: {}", height);
         (height * chunk_biome_size * chunk_biome_size + self.i_x() * chunk_biome_size + self.i_z()) as usize
     }
 
