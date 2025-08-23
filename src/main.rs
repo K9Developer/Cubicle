@@ -2,14 +2,23 @@ use cubicle::constants::versions::{VersionManager};
 use cubicle::models::other::position::Position;
 use cubicle::models::world::world::{World, WorldType};
 use std::time::Instant;
-
 // TODO: Finish all todos before doing more versions!
 
 /*
-TODO: Have a WorldContentManager that will be in charge of the API of the content of the world.
+TODO: Have a WorldContentManager that will be in charge of the API of the content of the world. like below:
+World {
+    content_manager: WorldContentManager
+}
+
+WorldContentManager {
+    entity_manager: EntityManager,
+    block_manager: BlockManager,
+    structure_manager: StructureManager,
+    heightmap_manager: HeightmapManager
+}
+
 TODO: For example: have set_block for chunk, dimension, and the WorldContentManager - then they'll each call each other after a bit of position tweaking.
 TODO: have WorldMetadata like WorldContentManager
-TODO: Biomes
 
 TODO: In the future add an extension that will allow for more structure control like (pesudo) `(structure as Village).houses()`
 
