@@ -83,17 +83,29 @@ fn main() {
     // println!("Biome (should be birch): {:?}", chunk.get_biome_at_block_position(Position::new("overworld", 9., 3., 9.)));
     // println!("Biome (should be lush): {:?}", chunk.get_biome_at_block_position(Position::new("overworld", 9., 2., 9.)));
 
-    // TODO: Current filter filters only for look at the local thing. I wanna also filter for diamond blocks with stone blocks on top
+    // TODO: For filters add a Filter::LocalStructure which checks blocks around so can do like commented code below
+    // TODO: Filters will run in a certain bounding box, if ran on world it will be everything, if on chunk, just the chunk, then can build a list of chunks to check on too
+
+    /*
+    let ls = LocalStructure::new()
+                    .add( (dx, dy, dz), "minecraft:diamond_block" )
+                    .add( (dx, dy, dz), "minecraft:diamond_block" )
+                    .add( (dx, dy, dz), "minecraft:diamond_block" )
+
+
     let block_filter = Filter::And(vec![
         Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:stone".into())),
-        Filter::Or(vec![
-            Filter::Compare(FilterKey::BLOCK_X_POSITION.into(), FilterOperation::GreaterThan, ComparableValue::Int(2)),
-            Filter::Compare(FilterKey::Z_POSITION.into(), FilterOperation::LessThanEquals, ComparableValue::Int(1)),
-        ]),
-        Filter::Compare(FilterKey::POSITION.into(), FilterOperation::Within, ComparableValue::BoundingBox(
-            Position::new("overworld", 2., 4., 4.),
-            Position::new("overworld", 1., 4., 4.)
-        ))
+        Filter::LocalStructure(ls)
     ]);
+
+    let block = Selection::new(&world)
+                        .add(chunk1)
+                        .add(chunk2)
+                        .add(chunk3)
+                        .find_block(block_filter)
+
+    let block = Selection::new(&world).all_chunks().find_block(block_filter)
+
     println!("{:?}", block_filter);
+     */
 }
