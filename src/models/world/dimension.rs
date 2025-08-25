@@ -3,7 +3,7 @@ use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
 use crate::models::world_structures::generic_structure::GenericParentStructure;
 use crate::models::world::chunk::Chunk;
-use crate::models::world::stores::structure_store::StructureStore;
+use crate::models::stores::structure_store::StructureStore;
 
 pub struct Dimension<'a> {
     dimension_id: String,

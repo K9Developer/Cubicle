@@ -4,7 +4,7 @@ use crate::constants::constants::BIOME_CELL_SIZE;
 use crate::constants::versions::Version;
 use crate::models::other::fast_set::FastSet;
 use crate::models::other::position::Position;
-use crate::models::world::stores::store::StoreLike;
+use crate::traits::misc::store::StoreLike;
 
 #[derive(Debug)]
 pub struct BiomeStore<'a> {

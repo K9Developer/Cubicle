@@ -2,6 +2,11 @@ use cubicle::constants::versions::{VersionManager};
 use cubicle::models::other::position::Position;
 use cubicle::models::world::world::{World, WorldType};
 use std::time::Instant;
+use cubicle::models::filter::comparable_value::ComparableValue;
+use cubicle::models::filter::filter::Filter;
+use cubicle::models::filter::filter_keys::FilterKey;
+use cubicle::models::filter::filter_operations::FilterOperation;
+use cubicle::traits::access::prelude::{BlockReader};
 // TODO: Finish all todos before doing more versions!
 
 /*
@@ -35,36 +40,60 @@ world.get_biome_at_position() -> &str
 world.get_block_at_position() -> FullBlock
 */
 
+/*
+Up next:
+    * Filters - We'll have a Filter that has key, comparer, value. for example:
+     let f = Filter::new();
+     f.add(FilterKey::x_pos, FilterComp::BiggerThan, {3})
+     f.add(FilterKey::position, FilterComp::Within, {pos1, pos2})
+    * Access Traits
+    * The Managers (EntityManager, BlockManager, etc.)
+    * The heightmaps
+*/
 
 fn main() {
-    let v = VersionManager::get("1.20.1", WorldType::SINGLEPLAYER);
-    let mut w = World::new("C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test".parse().unwrap(), &v);
-
-    w.register_regions();
-    let start = Instant::now();
-    w.load_region(Position::new("overworld", -1f32, 0f32, -1f32));
-    let end = start.elapsed();
-    println!("Time elapsed in load_region() is: {:?}", end);
-
-    let b = w.get_block_at_position(Position::new("overworld", -504f32, 62f32, -504f32));
-    println!("Block at position: {:?}", b);
-    // let biome = w.dimension("overworld").chunk((-32, -32)).unwrap().biome_store().get_biome_at_block_position(
-    //     Position::new("overworld", 0., 0., 0.)
-    // );
-    // println!("Biome: {:?}", biome);
+    // let v = VersionManager::get("1.20.1", WorldType::SINGLEPLAYER);
+    // let mut w = World::new("C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test".parse().unwrap(), &v);
     //
-    // let dim = w.dimension("overworld");
-    // let all = dim.structure_store().structures();
-    // for s in all {
-    //     let b = s.chunk_position().to_block_coords(v.data.chunk_size);
-    //     println!("Found a structure with ID of {:?} at {} {} {}", s.id(), b.x(), b.y(), b.z());
-    // }
+    // w.register_regions();
+    // let start = Instant::now();
+    // w.load_region(Position::new("overworld", -1f32, 0f32, -1f32));
+    // let end = start.elapsed();
+    // println!("Time elapsed in load_region() is: {:?}", end);
     //
-    // let es = w.get_entities_of_id("minecraft:cow");
-    // for ent in es {
-    //     println!("A cow is at: {:?} {:?} {:?}", ent.base().position().x(), ent.base().position().y(), ent.base().position().z());
-    // }
-    let chunk = w.dimension("overworld").chunk((-32, -32)).unwrap().biome_store();
-    println!("Biome (should be birch): {:?}", chunk.get_biome_at_block_position(Position::new("overworld", 9., 3., 9.)));
-    println!("Biome (should be lush): {:?}", chunk.get_biome_at_block_position(Position::new("overworld", 9., 2., 9.)));
+    // let b = w.get_block_at_position(Position::new("overworld", -504f32, 62f32, -504f32));
+    // println!("Block at position: {:?}", b);
+    // // let biome = w.dimension("overworld").chunk((-32, -32)).unwrap().biome_store().get_biome_at_block_position(
+    // //     Position::new("overworld", 0., 0., 0.)
+    // // );
+    // // println!("Biome: {:?}", biome);
+    // //
+    // // let dim = w.dimension("overworld");
+    // // let all = dim.structure_store().structures();
+    // // for s in all {
+    // //     let b = s.chunk_position().to_block_coords(v.data.chunk_size);
+    // //     println!("Found a structure with ID of {:?} at {} {} {}", s.id(), b.x(), b.y(), b.z());
+    // // }
+    // //
+    // // let es = w.get_entities_of_id("minecraft:cow");
+    // // for ent in es {
+    // //     println!("A cow is at: {:?} {:?} {:?}", ent.base().position().x(), ent.base().position().y(), ent.base().position().z());
+    // // }
+    // let chunk = w.dimension("overworld").chunk((-32, -32)).unwrap().biome_store();
+    // println!("Biome (should be birch): {:?}", chunk.get_biome_at_block_position(Position::new("overworld", 9., 3., 9.)));
+    // println!("Biome (should be lush): {:?}", chunk.get_biome_at_block_position(Position::new("overworld", 9., 2., 9.)));
+
+    // TODO: Current filter filters only for look at the local thing. I wanna also filter for diamond blocks with stone blocks on top
+    let block_filter = Filter::And(vec![
+        Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:stone".into())),
+        Filter::Or(vec![
+            Filter::Compare(FilterKey::BLOCK_X_POSITION.into(), FilterOperation::GreaterThan, ComparableValue::Int(2)),
+            Filter::Compare(FilterKey::Z_POSITION.into(), FilterOperation::LessThanEquals, ComparableValue::Int(1)),
+        ]),
+        Filter::Compare(FilterKey::POSITION.into(), FilterOperation::Within, ComparableValue::BoundingBox(
+            Position::new("overworld", 2., 4., 4.),
+            Position::new("overworld", 1., 4., 4.)
+        ))
+    ]);
+    println!("{:?}", block_filter);
 }

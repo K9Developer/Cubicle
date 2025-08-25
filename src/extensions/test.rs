@@ -4,7 +4,7 @@ pub trait Test {
     fn draw(&self);
 }
 
-impl Test for World {
+impl Test for World<'_> {
     fn draw(&self) {}
 }
 

@@ -15,9 +15,9 @@ use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use crate::models::other::properties::Properties;
-use crate::models::world::stores::biome_store::BiomeStore;
-use crate::models::world::stores::block_store::BlockStore;
-use crate::models::world::stores::structure_store::StructureStoreReference;
+use crate::models::stores::biome_store::BiomeStore;
+use crate::models::stores::block_store::BlockStore;
+use crate::models::stores::structure_store::StructureStoreReference;
 use crate::models::world_structures::generic_structure::{BoundingBox, GenericChildStructure, GenericParentStructure};
 // TODO: Support other dimensions (custom paths)
 

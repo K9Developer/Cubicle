@@ -21,7 +21,7 @@ pub struct Position {
     dimension: String
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EntityPosition {
     x: f64,
     y: f64,
