@@ -4,16 +4,6 @@ use std::sync::Arc;
 use crate::constants::constants::BIOME_CELL_SIZE;
 use crate::constants::versions::Version;
 
-fn div_floor(a: i32, b: i32) -> i32 {
-    let div = a / b;
-    let rem = a % b;
-    if (rem != 0) && ((rem > 0) != (b > 0)) {
-        div - 1
-    } else {
-        div
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Position {
     x: i32,
@@ -21,17 +11,6 @@ pub struct Position {
     z: i32,
     dimension: String
 }
-
-#[derive(Debug, Clone)]
-pub struct EntityPosition {
-    x: f64,
-    y: f64,
-    z: f64,
-    dimension: String,
-    rot_yaw: f64,
-    rot_pitch: f64,
-}
-
 impl Position {
     pub fn new(dimension: &str, x: i32, y: i32, z: i32) -> Self {
         Self { x, y, z, dimension: dimension.into() }
@@ -94,42 +73,6 @@ impl Position {
     }
 }
 
-impl EntityPosition {
-    pub fn new(x: f64, y: f64, z: f64, rot_yaw: f64, rot_pitch: f64, dimension: &str) -> Self {
-        EntityPosition {
-            x, y, z,
-            dimension: dimension.to_string(),
-            rot_yaw,
-            rot_pitch
-        }
-    }
-
-    pub fn dimension(&self) -> &str { &self.dimension }
-    pub fn x(&self) -> f64 { self.x }
-    pub fn y(&self) -> f64 { self.y }
-    pub fn z(&self) -> f64 { self.z }
-    pub fn i_x(&self) -> i32 { self.x.floor() as i32 }
-    pub fn i_y(&self) -> i32 { self.y.floor() as i32 }
-    pub fn i_z(&self) -> i32 { self.z.floor() as i32 }
-    pub fn yaw(&self) -> f64 { self.rot_yaw }
-    pub fn pitch(&self) -> f64 { self.rot_pitch }
-
-    pub fn set_x(&mut self, x: f64) { self.x = x }
-    pub fn set_y(&mut self, y: f64) { self.y = y }
-    pub fn set_z(&mut self, z: f64) { self.z = z }
-    pub fn set_yaw(&mut self, rot_yaw: f64) { self.rot_yaw = rot_yaw; }
-    pub fn set_pitch(&mut self, pitch: f64) { self.rot_pitch = pitch; }
-    pub fn set_dimension(&mut self, dimension: &str) { self.dimension = dimension.into(); }
-}
-
-impl PartialEq for EntityPosition {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y && self.z == other.z && self.dimension == other.dimension
-            && self.rot_yaw == other.rot_yaw
-            && self.rot_pitch == other.rot_pitch
-    }
-}
-
 impl PartialEq for Position {
     fn eq(&self, other: &Self) -> bool {
         other.x == self.x && other.y == self.y && other.z == self.z && self.dimension == other.dimension
@@ -170,4 +113,3 @@ impl From<(i32, i32, i32, &str)> for Position {
         Position::new(t.3, t.0, t.1, t.2)
     }
 }
-

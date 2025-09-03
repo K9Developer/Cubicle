@@ -1,5 +1,5 @@
 use crate::models::other::fast_set::FastSet;
-use crate::models::other::position::Position;
+use crate::models::positions::whole_position::Position;
 
 pub trait StoreLike<T: Eq> {
     fn palette(&self) -> &FastSet<T>;

@@ -1,4 +1,3 @@
-pub mod position;
 pub mod inventory;
 pub mod tick;
 pub mod region;

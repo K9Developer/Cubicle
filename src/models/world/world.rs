@@ -4,12 +4,9 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use crate::constants::versions::Version;
 use crate::loaders::loader::Loader;
-use crate::models::entity::entity::Entity;
-use crate::models::other::position::Position;
 use crate::models::other::region::{Region, RegionType};
-use crate::models::world::block::Block;
 use crate::models::world::dimension::Dimension;
-use crate::types::WorldType;
+use crate::types::{RegionPosition, WorldType};
 // TODO: When loading a world have a WorldInfo struct with readonly flag
 
 pub struct World<'a> {
@@ -73,7 +70,7 @@ impl<'a> World<'a> {
         self.unloaded_regions.len()
     }
 
-    pub fn load_region(&mut self, position: Position) {
+    pub fn load_region(&mut self, position: RegionPosition) {
         for region in self.unloaded_regions.iter() {
             if position == region.position {
                 match region.region_type {

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use fastnbt::Value;
-use crate::models::other::position::{EntityPosition, Position};
+use crate::models::positions::entity_position::EntityPosition;
+use crate::models::positions::whole_position::Position;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ComparableValue { // TODO: Expand on this...

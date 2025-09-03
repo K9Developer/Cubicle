@@ -1,5 +1,4 @@
 use cubicle::constants::versions::{VersionManager};
-use cubicle::models::other::position::Position;
 use cubicle::models::world::world::{World, WorldKind};
 use std::time::Instant;
 use cubicle::models::filter::comparable_value::ComparableValue;
@@ -7,11 +6,12 @@ use cubicle::models::filter::filter::Filter;
 use cubicle::models::filter::filter_keys::FilterKey;
 use cubicle::models::filter::filter_operations::FilterOperation;
 use cubicle::models::filter::local_structure::{LocalStructure, Offset};
+use cubicle::models::positions::chunk_position::ChunkPosition;
 use cubicle::models::world::block::Block;
 use cubicle::models::world::selection::Selection;
 use cubicle::traits::access::prelude::BlockAccess;
 use cubicle::traits::access::prelude::{BlockReader};
-use cubicle::types::ChunkPosition;
+use cubicle::types::{RegionPosition};
 // TODO: Finish all todos before doing more versions!
 /*
 TODO: Have a WorldContentManager that will be in charge of the API of the content of the world. like below:
@@ -96,7 +96,7 @@ fn main() {
     world.lock().unwrap().register_regions();
 
     let mut s = Instant::now();
-    world.lock().unwrap().load_region(Position::new("overworld", 0, 0, 0));
+    world.lock().unwrap().load_region(RegionPosition::new(0, 0, "overworld"));
     let mut e = s.elapsed();
     println!("Time elapsed in load_region() is: {:?}", e);
     println!("Loaded {} chunks!", world.lock().unwrap().dimension("overworld").unwrap().len());

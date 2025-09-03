@@ -1,7 +1,7 @@
 use fastnbt::Value;
-use crate::models::other::position::Position;
 use crate::models::other::properties::Properties;
-use crate::types::ChunkPosition;
+use crate::models::positions::chunk_position::ChunkPosition;
+use crate::models::positions::whole_position::Position;
 
 pub struct BoundingBox {
     min_pos: Position,

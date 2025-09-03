@@ -10,9 +10,9 @@ use crate::constants::constants::{ZLIB_COMPRESSION_TYPE};
 use crate::constants::versions::Version;
 use crate::loaders::utils::{get_region_files_in_folder, nbt_uuid_to_u128, parse_region_file, uncompress_zlib};
 use crate::models::entity::entity::{Entity, EntityType, MobEntity};
-use crate::models::other::position::EntityPosition;
 use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
+use crate::models::positions::entity_position::EntityPosition;
 use crate::models::world::world::WorldKind;
 // TODO: Support other dimensions (custom paths)
 

@@ -3,10 +3,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use crate::constants::versions::Version;
 use crate::models::filter::filter::Filter;
-use crate::models::other::position::Position;
+use crate::models::positions::chunk_position::ChunkPosition;
+use crate::models::positions::whole_position::Position;
 use crate::models::world::full_block::FullBlock;
 use crate::traits::access::prelude::{BlockReader, BlockWriter};
-use crate::types::{ChunkPosition, ChunkType, WorldType};
+use crate::types::{ChunkType, WorldType};
 use crate::utils::position_utils::{block_index_to_block_position, block_position_to_chunk_pos_and_block_index};
 
 pub struct Selection<'a> {

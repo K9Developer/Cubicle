@@ -1,5 +1,5 @@
-use crate::models::other::position::Position;
-use crate::types::ChunkPosition;
+use crate::models::positions::chunk_position::ChunkPosition;
+use crate::models::positions::whole_position::Position;
 use crate::utils::generic_utils::div_rem_nonzero;
 
 pub fn block_position_to_chunk_pos_and_block_index(pos: &Position, chunk_size: i32, min_y: i32) -> (ChunkPosition, usize) {

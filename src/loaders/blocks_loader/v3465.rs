@@ -3,7 +3,6 @@ use crate::constants::constants::{BIOME_CELL_SIZE, ZLIB_COMPRESSION_TYPE};
 use crate::constants::versions::Version;
 use crate::loaders::utils::{get_region_files_in_folder, parse_region_file, uncompress_zlib};
 use crate::models::nbt_structures::v3465::regular::{NBTBlockPalette, NBTChunk, NBTSection};
-use crate::models::other::position::Position;
 use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
 use crate::models::world::block::Block;
@@ -15,11 +14,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use crate::models::other::properties::Properties;
+use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::stores::biome_store::BiomeStore;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::structure_store::StructureStoreReference;
 use crate::models::world_structures::generic_structure::{BoundingBox, GenericChildStructure, GenericParentStructure};
-use crate::types::ChunkPosition;
 use crate::utils::generic_utils::bit_length;
 // TODO: Support other dimensions (custom paths)
 

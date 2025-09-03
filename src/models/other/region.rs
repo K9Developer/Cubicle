@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use crate::models::other::position::Position;
+use crate::types::RegionPosition;
 
 #[derive(Debug, Clone)]
 pub enum RegionType {
@@ -9,7 +9,7 @@ pub enum RegionType {
 
 #[derive(Debug)]
 pub struct Region {
-    pub position: Position,
+    pub position: RegionPosition,
     pub path: PathBuf,
     pub region_type: RegionType
 }

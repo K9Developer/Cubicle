@@ -6,3 +6,4 @@ pub mod world_structures;
 pub mod stores;
 pub mod filter;
 pub mod managers;
+pub mod positions;

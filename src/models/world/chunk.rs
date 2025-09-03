@@ -1,14 +1,11 @@
 use std::sync::Arc;
 use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
-use crate::models::other::position::Position;
 use crate::models::other::tick::Tick;
+use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::stores::biome_store::BiomeStore;
-use crate::models::stores::block_store;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::structure_store::StructureStoreReference;
-use crate::models::world_structures::generic_structure::GenericParentStructure;
-use crate::types::ChunkPosition;
 // TODO: have multiple selector like EntitySelector, then have stuff like remove_entity(selector: EntitySelector) - this will be used in filters too.
 
 #[derive(Debug)]

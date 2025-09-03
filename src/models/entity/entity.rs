@@ -1,7 +1,7 @@
 use crate::models::other::inventory::Inventory;
-use crate::models::other::position::{EntityPosition};
 use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
+use crate::models::positions::entity_position::EntityPosition;
 
 #[derive(Debug)]
 pub struct GenericEntity {

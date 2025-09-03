@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::fmt;
 use fastnbt::Value;
-use crate::models::other::position::Position;
 use crate::models::other::properties::Properties;
+use crate::models::positions::whole_position::Position;
 use crate::models::world::block::Block;
 use crate::types::WorldType;
 use crate::utils::position_utils::block_position_to_chunk_pos_and_block_index;

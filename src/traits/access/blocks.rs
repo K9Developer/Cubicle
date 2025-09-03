@@ -1,6 +1,5 @@
 use crate::models::filter::filter::Filter;
-use crate::models::other::position::Position;
-use crate::models::world::block::Block;
+use crate::models::positions::whole_position::Position;
 use crate::models::world::full_block::FullBlock;
 // TODO: Full block
 // TODO: Filters

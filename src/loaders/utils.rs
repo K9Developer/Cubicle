@@ -3,8 +3,8 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use flate2::read::ZlibDecoder;
 use crate::constants::constants::{MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE, MCA_REGION_SECTOR_SIZE};
-use crate::models::other::position::Position;
 use crate::models::other::region::{Region, RegionType};
+use crate::types::RegionPosition;
 
 pub struct ParsedRegionChunk {
     pub offset: usize,
@@ -37,7 +37,7 @@ pub fn get_region_files_in_folder(folder: &PathBuf, dimension_name: &str, region
             continue;
         }
         regions.push(Region {
-            position: Position::new(dimension_name, region_x.unwrap(), 0, region_z.unwrap()),
+            position: RegionPosition::new(region_x.unwrap(), region_z.unwrap(), dimension_name),
             path: file.path().to_path_buf(),
             region_type: region_type.clone() // bad maybe?
         })

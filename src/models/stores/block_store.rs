@@ -1,9 +1,8 @@
 use std::sync::Arc;
 use crate::constants::versions::Version;
 use crate::models::other::fast_set::FastSet;
-use crate::models::other::position::Position;
+use crate::models::positions::whole_position::Position;
 use crate::models::world::block::Block;
-use crate::models::world::full_block::FullBlock;
 use crate::traits::misc::store::StoreLike;
 
 #[derive(Debug)]
