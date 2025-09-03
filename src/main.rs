@@ -1,14 +1,18 @@
 use cubicle::constants::versions::{VersionManager};
 use cubicle::models::other::position::Position;
-use cubicle::models::world::world::{World, WorldType};
+use cubicle::models::world::world::{World, WorldKind};
 use std::time::Instant;
 use cubicle::models::filter::comparable_value::ComparableValue;
 use cubicle::models::filter::filter::Filter;
 use cubicle::models::filter::filter_keys::FilterKey;
 use cubicle::models::filter::filter_operations::FilterOperation;
+use cubicle::models::filter::local_structure::{LocalStructure, Offset};
+use cubicle::models::world::block::Block;
+use cubicle::models::world::selection::Selection;
+use cubicle::traits::access::prelude::BlockAccess;
 use cubicle::traits::access::prelude::{BlockReader};
+use cubicle::types::ChunkPosition;
 // TODO: Finish all todos before doing more versions!
-
 /*
 TODO: Have a WorldContentManager that will be in charge of the API of the content of the world. like below:
 World {
@@ -34,10 +38,13 @@ TODO: Have traits like in the link for world, dimension, chunk and they each pro
 
 TODO: Make sure biomes are exact - look at edge of biome and check
 
+TODO: Too many version clones, not sure how to handle but it probably shouldnt be looking like this
+
 have:
 FullBlock which will have more info like biome, position, etc.
 world.get_biome_at_position() -> &str
 world.get_block_at_position() -> FullBlock
+FullBlock will have a reference to world and then doing FullBlock.set_id("minecraft:stone") will actually replace the block
 */
 
 /*
@@ -53,7 +60,6 @@ Up next:
 
 fn main() {
     // let v = VersionManager::get("1.20.1", WorldType::SINGLEPLAYER);
-    // let mut w = World::new("C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test".parse().unwrap(), &v);
     //
     // w.register_regions();
     // let start = Instant::now();
@@ -85,12 +91,39 @@ fn main() {
 
     // TODO: For filters add a Filter::LocalStructure which checks blocks around so can do like commented code below
     // TODO: Filters will run in a certain bounding box, if ran on world it will be everything, if on chunk, just the chunk, then can build a list of chunks to check on too
+    let v = VersionManager::get("1.20.1", WorldKind::SINGLEPLAYER);
+    let world = World::new("C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test".parse().unwrap(), v);
+    world.lock().unwrap().register_regions();
+    world.lock().unwrap().load_region(Position::new("overworld", 0, 0, 0));
+
+    let ls = LocalStructure::new()
+        .add((1, 0, 0), "minecraft:stone")
+        .add( (0, 0, 0), "minecraft:diamond_block" )
+        .add( (0, 0, 1), "minecraft:diamond_block" );
+
+    let block_filter = Filter::And(vec![
+        Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:stone".into())),
+        Filter::Compare(FilterKey::X_POSITION.into(), FilterOperation::Equals, 2.into()),
+        Filter::Compare(FilterKey::Z_POSITION.into(), FilterOperation::Equals, 2.into()),
+    ]);
+
+    let w = world.clone();
+    let mut selection = Selection::new(w)
+        .selection_add_chunk_position(ChunkPosition::new(0,0,"overworld"));
+
+    // selection.blocks(|b| {
+    //     println!("{}", b);
+    //     true
+    // });
+    let bs = selection.find_blocks(block_filter, 0);
+    println!("Found {} stone blocks in the column:", bs.len());
+    for b in bs {
+        println!("\t{} at {}", b.id(), b.position());
+    }
+
 
     /*
-    let ls = LocalStructure::new()
-                    .add( (dx, dy, dz), "minecraft:diamond_block" )
-                    .add( (dx, dy, dz), "minecraft:diamond_block" )
-                    .add( (dx, dy, dz), "minecraft:diamond_block" )
+
 
 
     let block_filter = Filter::And(vec![
@@ -109,3 +142,4 @@ fn main() {
     println!("{:?}", block_filter);
      */
 }
+// filter 28, filter keys

@@ -37,7 +37,7 @@ pub fn get_region_files_in_folder(folder: &PathBuf, dimension_name: &str, region
             continue;
         }
         regions.push(Region {
-            position: Position::new(dimension_name, region_x.unwrap() as f32, 0f32, region_z.unwrap() as f32),
+            position: Position::new(dimension_name, region_x.unwrap(), 0, region_z.unwrap()),
             path: file.path().to_path_buf(),
             region_type: region_type.clone() // bad maybe?
         })

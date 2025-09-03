@@ -18,7 +18,7 @@ pub enum ComparableValue { // TODO: Expand on this...
 }
 
 impl ComparableValue {
-    fn from_nbt_value(val: Value) -> Self {
+    pub fn from_nbt_value(val: Value) -> Self {
         match val {
             Value::String(s) => ComparableValue::Text(s),
             Value::Byte(n) => ComparableValue::Int(n as i64),
@@ -44,5 +44,77 @@ impl PartialOrd for ComparableValue {
             (ComparableValue::Text(x), ComparableValue::Text(y)) => x.partial_cmp(y),
             _ => None,
         }
+    }
+}
+
+impl From<i32> for ComparableValue {
+    fn from(val: i32) -> Self {
+        ComparableValue::Int(val as i64)
+    }
+}
+
+impl From<i64> for ComparableValue {
+    fn from(val: i64) -> Self {
+        ComparableValue::Int(val)
+    }
+}
+
+impl From<f32> for ComparableValue {
+    fn from(val: f32) -> Self {
+        ComparableValue::Float(val as f64)
+    }
+}
+
+impl From<f64> for ComparableValue {
+    fn from(val: f64) -> Self {
+        ComparableValue::Float(val)
+    }
+}
+
+impl From<bool> for ComparableValue {
+    fn from(val: bool) -> Self {
+        ComparableValue::Bool(val)
+    }
+}
+
+impl From<String> for ComparableValue {
+    fn from(val: String) -> Self {
+        ComparableValue::Text(val)
+    }
+}
+
+impl From<&str> for ComparableValue {
+    fn from(val: &str) -> Self {
+        ComparableValue::Text(val.to_string())
+    }
+}
+
+impl From<Position> for ComparableValue {
+    fn from(val: Position) -> Self {
+        ComparableValue::Position(val)
+    }
+}
+
+impl From<EntityPosition> for ComparableValue {
+    fn from(val: EntityPosition) -> Self {
+        ComparableValue::EntityPosition(val)
+    }
+}
+
+impl From<Vec<ComparableValue>> for ComparableValue {
+    fn from(val: Vec<ComparableValue>) -> Self {
+        ComparableValue::List(val)
+    }
+}
+
+impl From<HashMap<String, ComparableValue>> for ComparableValue {
+    fn from(val: HashMap<String, ComparableValue>) -> Self {
+        ComparableValue::Map(val)
+    }
+}
+
+impl From<(Position, Position)> for ComparableValue {
+    fn from(val: (Position, Position)) -> Self {
+        ComparableValue::BoundingBox(val.0, val.1)
     }
 }

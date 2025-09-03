@@ -1,7 +1,9 @@
+use std::sync::Arc;
 use crate::constants::versions::Version;
 use crate::models::other::fast_set::FastSet;
 use crate::models::other::position::Position;
 use crate::models::world::block::Block;
+use crate::models::world::full_block::FullBlock;
 use crate::traits::misc::store::StoreLike;
 
 #[derive(Debug)]
@@ -11,15 +13,15 @@ pub struct QuickLookupData {}
 
 // z -> x -> y
 #[derive(Debug)]
-pub struct BlockStore<'a> {
+pub struct BlockStore {
     palette: FastSet<Block>,
     indices: Vec<usize>,
-    version: &'a Version,
+    version: Arc<Version>,
     qld: QuickLookupData,
 }
 
-impl<'a> BlockStore<'a> {
-    pub fn new(version: &'a Version) -> BlockStore<'a> {
+impl BlockStore {
+    pub fn new(version: Arc<Version>) -> BlockStore {
         let height = (version.data.highest_y - version.data.lowest_y).abs() as i32;
         let total_blocks = (version.data.chunk_size * version.data.chunk_size * height) as usize;
 
@@ -50,9 +52,12 @@ impl<'a> BlockStore<'a> {
     pub fn indices_slice(&self) -> &[usize] { <Self as StoreLike<Block>>::indices_slice(self) }
     #[inline]
     pub fn indices_slice_mut(&mut self) -> &mut [usize] { <Self as StoreLike<Block>>::indices_slice_mut(self) }
+    pub fn blocks(&self) -> impl Iterator<Item=Block> {
+        self.indices.iter().map(|i| self.palette[*i].clone())
+    }
 }
 
-impl<'a> StoreLike<Block> for BlockStore<'a> {
+impl StoreLike<Block> for BlockStore {
     #[inline]
     fn palette(&self) -> &FastSet<Block> { &self.palette }
 
@@ -105,7 +110,7 @@ impl<'a> StoreLike<Block> for BlockStore<'a> {
     }
 
     fn set_item_at_position(&mut self, relative_position: Position, block: Block) -> bool {
-        let index = relative_position.to_index(self.version);
+        let index = relative_position.to_index(self.version.clone());
         self.set_item_at_index(index, block)
     }
 
@@ -117,7 +122,7 @@ impl<'a> StoreLike<Block> for BlockStore<'a> {
     }
 
     fn get_item_at_position(&self, relative_position: Position) -> Option<Block> {
-        let index = relative_position.to_index(self.version);
+        let index = relative_position.to_index(self.version.clone());
         self.get_item_at_index(index)
     }
 

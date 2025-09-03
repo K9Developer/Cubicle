@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 use crate::constants::versions::Version;
 use crate::loaders::entities_loader::v3465::EntityLoaderV3465;
 use crate::models::entity::entity::Entity;
@@ -12,7 +13,7 @@ pub trait EntityLoader<'a> {
     fn parse_entity_chunk(&self, data: Vec<u8>, compression_type: u8, dimension: &str) -> Option<Vec<Entity>>;
 }
 
-pub fn get_entity_loader(version: &Version) -> Box<dyn EntityLoader + '_> {
+pub fn get_entity_loader<'a>(version: Arc<Version>) -> Box<dyn EntityLoader<'a>> {
     match version.data.version_data {
         3465 => Box::new( EntityLoaderV3465 { version }),
         _ => panic!()

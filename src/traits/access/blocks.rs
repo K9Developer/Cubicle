@@ -1,14 +1,15 @@
+use crate::models::filter::filter::Filter;
 use crate::models::other::position::Position;
 use crate::models::world::block::Block;
-
+use crate::models::world::full_block::FullBlock;
 // TODO: Full block
 // TODO: Filters
 
-pub trait BlockReader {
-    fn blocks(&self) -> impl Iterator<Item = &Block>;
+pub trait BlockReader<'a> {
+    fn blocks<F>(&mut self, callback: F) where F: FnMut(FullBlock<'a>) -> bool;
     fn block_count(&self) -> usize;
-    fn block_at_relative_position(&self, position: Position) -> Option<&Block>;
-    fn block_at_relative_index(&self, index: usize) -> Option<&Block>;
+    fn block_at_position(&mut self, position: Position) -> Option<FullBlock<'a>>;
+    fn find_blocks(&mut self, filter: Filter, limit: usize) -> Vec<FullBlock<'a>>;
 }
 
 pub trait BlockWriter {
@@ -16,4 +17,4 @@ pub trait BlockWriter {
     fn set_block_at_relative_index(&mut self, index: usize) -> bool;
 }
 
-pub trait BlockAccess: BlockReader + BlockWriter {}
+pub trait BlockAccess<'a>: BlockReader<'a> + BlockWriter {}

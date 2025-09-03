@@ -1,5 +1,6 @@
 // biomes are kept as 4x4x4 cells in a chunk - BIOME_CELL_SIZE
 
+use std::sync::Arc;
 use crate::constants::constants::BIOME_CELL_SIZE;
 use crate::constants::versions::Version;
 use crate::models::other::fast_set::FastSet;
@@ -7,14 +8,14 @@ use crate::models::other::position::Position;
 use crate::traits::misc::store::StoreLike;
 
 #[derive(Debug)]
-pub struct BiomeStore<'a> {
+pub struct BiomeStore {
     palette: FastSet<String>,
     indices: Vec<usize>,
 
-    version: &'a Version,
+    version: Arc<Version>,
 }
 
-impl<'a> StoreLike<String> for BiomeStore<'a> {
+impl StoreLike<String> for BiomeStore {
     fn palette(&self) -> &FastSet<String> { &self.palette }
     fn add_item_to_palette(&mut self, biome: String) -> usize {
         self.palette.insert(biome)
@@ -56,7 +57,7 @@ impl<'a> StoreLike<String> for BiomeStore<'a> {
         true
     }
     fn set_item_at_position(&mut self, relative_position: Position, biome: String) -> bool {
-        let index = relative_position.to_index(self.version);
+        let index = relative_position.to_index(self.version.clone());
         self.set_biome_at_index(index, biome)
     }
     fn get_item_at_index(&self, index: usize) -> Option<String> {
@@ -67,7 +68,7 @@ impl<'a> StoreLike<String> for BiomeStore<'a> {
         else { Some(biome.clone()) }
     }
     fn get_item_at_position(&self, relative_position: Position) -> Option<String> {
-        let index = relative_position.to_biome_index(self.version);
+        let index = relative_position.to_biome_index(self.version.clone());
         self.get_biome_at_index(index)
     }
     fn indices_slice(&self) -> &[usize] {
@@ -78,8 +79,8 @@ impl<'a> StoreLike<String> for BiomeStore<'a> {
     }
 }
 
-impl<'a> BiomeStore<'a> {
-    pub fn new(version: &'a Version) -> Self {
+impl BiomeStore {
+    pub fn new(version: Arc<Version>) -> Self {
         let height = version.data.lowest_y.abs() + version.data.highest_y.abs();
         let total_biomes = (version.data.chunk_size * version.data.chunk_size * height) / BIOME_CELL_SIZE.pow(3);
         let mut p = FastSet::new();
@@ -112,9 +113,9 @@ impl<'a> BiomeStore<'a> {
     pub fn get_biome_at_block_position(&self, relative_position: Position) -> Option<String> {
         let p = Position::new(
             relative_position.dimension(),
-            relative_position.i_x().div_euclid(BIOME_CELL_SIZE) as f32,
-            relative_position.i_y().div_euclid(BIOME_CELL_SIZE) as f32,
-            relative_position.i_z().div_euclid(BIOME_CELL_SIZE) as f32
+            relative_position.x().div_euclid(BIOME_CELL_SIZE),
+            relative_position.y().div_euclid(BIOME_CELL_SIZE),
+            relative_position.z().div_euclid(BIOME_CELL_SIZE)
         );
         self.get_biome_at_position(p)
     }

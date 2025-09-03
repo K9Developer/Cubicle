@@ -24,7 +24,7 @@ impl StructureStore {
     }
 
     pub fn add_structure(&mut self, structure: GenericParentStructure) {
-        let chunk_ref = structure.chunk_position().to_chunk_ref();
+        let chunk_ref = structure.chunk_position().reference();
         self.structures.entry(chunk_ref).or_insert_with(Vec::new).push(structure);
     }
 

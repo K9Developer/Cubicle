@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
 use crate::models::other::position::Position;
@@ -7,36 +8,36 @@ use crate::models::stores::block_store;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::structure_store::StructureStoreReference;
 use crate::models::world_structures::generic_structure::GenericParentStructure;
+use crate::types::ChunkPosition;
 // TODO: have multiple selector like EntitySelector, then have stuff like remove_entity(selector: EntitySelector) - this will be used in filters too.
 
 #[derive(Debug)]
 pub struct Chunk<'a> {
-    position: Position,
+    position: ChunkPosition,
     data_version: i32,
     inhabited_time: Tick,
     last_update: Tick,
     status: String,
 
-    block_store: BlockStore<'a>,
-    biome_store: BiomeStore<'a>,
+    block_store: BlockStore,
+    biome_store: BiomeStore,
 
     entities: Vec<&'a Entity>,
     structures: Vec<StructureStoreReference>,
 
-    version: &'a Version,
+    version: Arc<Version>,
 }
 
 impl<'a> Chunk<'a> {
     pub fn new(
-        version: &'a Version,
-        position: Position,
+        version: Arc<Version>,
+        position: ChunkPosition,
         data_version: i32,
         inhabited_time: Tick,
         last_update: Tick,
         status: String,
     ) -> Chunk<'a> {
         Chunk {
-            version,
 
             position,
             data_version,
@@ -44,8 +45,9 @@ impl<'a> Chunk<'a> {
             last_update,
             status,
 
-            block_store: BlockStore::new(&version),
-            biome_store: BiomeStore::new(&version),
+            block_store: BlockStore::new(version.clone()),
+            biome_store: BiomeStore::new(version.clone()),
+            version,
 
             entities: Vec::new(),
             structures: Vec::new(),
@@ -55,7 +57,7 @@ impl<'a> Chunk<'a> {
     pub fn version(&self) -> &Version {
         &self.version
     }
-    pub fn position(&self) -> &Position {
+    pub fn position(&self) -> &ChunkPosition {
         &self.position
     }
     pub fn inhabited_time(&self) -> &Tick {
@@ -67,14 +69,14 @@ impl<'a> Chunk<'a> {
     pub fn status(&self) -> &String {
         &self.status
     }
-    pub fn stores(&self) -> (&BlockStore<'a>, &BiomeStore<'a>) { (&self.block_store, &self.biome_store) }
-    pub fn stores_mut(&mut self) -> (&mut BlockStore<'a>, &mut BiomeStore<'a>) { (&mut self.block_store, &mut self.biome_store) }
-    pub fn block_store(&self) -> &BlockStore<'a> {
+    pub fn stores(&self) -> (&BlockStore, &BiomeStore) { (&self.block_store, &self.biome_store) }
+    pub fn stores_mut(&mut self) -> (&mut BlockStore, &mut BiomeStore) { (&mut self.block_store, &mut self.biome_store) }
+    pub fn block_store(&self) -> &BlockStore {
         &self.block_store
     }
-    pub fn block_store_mut(&mut self) -> &mut BlockStore<'a> { &mut self.block_store }
-    pub fn biome_store(&self) -> &BiomeStore<'a> { &self.biome_store }
-    pub fn biome_store_mut(&mut self) -> &mut BiomeStore<'a> { &mut self.biome_store }
+    pub fn block_store_mut(&mut self) -> &mut BlockStore { &mut self.block_store }
+    pub fn biome_store(&self) -> &BiomeStore { &self.biome_store }
+    pub fn biome_store_mut(&mut self) -> &mut BiomeStore { &mut self.biome_store }
     pub fn entities(&mut self) -> &Vec<&'a Entity> {
         &self.entities
     }
@@ -91,7 +93,7 @@ impl<'a> Chunk<'a> {
     pub fn set_status(&mut self, status: &'a str) {
         self.status = status.to_string();
     }
-    pub fn set_block_store(&mut self, block_store: BlockStore<'a>) {
+    pub fn set_block_store(&mut self, block_store: BlockStore) {
         self.block_store = block_store;
     }
     pub fn set_entities(&mut self, entities: Vec<&'static Entity>) {

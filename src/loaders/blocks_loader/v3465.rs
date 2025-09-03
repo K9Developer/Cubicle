@@ -8,24 +8,26 @@ use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
 use crate::models::world::block::Block;
 use crate::models::world::chunk::Chunk;
-use crate::models::world::world::WorldType;
-use crate::utils::bit_length;
+use crate::models::world::world::WorldKind;
 use fastnbt::Value;
 use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use crate::models::other::properties::Properties;
 use crate::models::stores::biome_store::BiomeStore;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::structure_store::StructureStoreReference;
 use crate::models::world_structures::generic_structure::{BoundingBox, GenericChildStructure, GenericParentStructure};
+use crate::types::ChunkPosition;
+use crate::utils::generic_utils::bit_length;
 // TODO: Support other dimensions (custom paths)
 
-pub(super) struct BlockLoaderV3465<'a> {
-    pub(crate) version: &'a Version,
+pub(super) struct BlockLoaderV3465 {
+    pub(crate) version: Arc<Version>,
 }
 
-impl<'a> BlockLoaderV3465<'a> {
+impl BlockLoaderV3465 {
     fn palette_block_to_block(&self, nbt_block: NBTBlockPalette) -> Block {
         Block::new(nbt_block.name.as_ref(), nbt_block.properties)
     }
@@ -110,7 +112,7 @@ impl<'a> BlockLoaderV3465<'a> {
         }
     }
 
-    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk<'a>, chunk_nbt: NBTChunk) {
+    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, chunk_nbt: NBTChunk) {
         let (block_store, biome_store) = chunk_obj.stores_mut();
 
         let section_block_count = (self.version.data.section_height * self.version.data.chunk_size * self.version.data.chunk_size) as usize;
@@ -122,7 +124,7 @@ impl<'a> BlockLoaderV3465<'a> {
         }
     }
 
-    fn populate_chunk_with_structures(&self, chunk_obj: &mut Chunk<'a>, chunk_nbt: &NBTChunk) -> Vec<GenericParentStructure> {
+    fn populate_chunk_with_structures(&self, chunk_obj: &mut Chunk, chunk_nbt: &NBTChunk) -> Vec<GenericParentStructure> {
         let mut new_structures = Vec::<GenericParentStructure>::new();
 
         // refs
@@ -151,7 +153,7 @@ impl<'a> BlockLoaderV3465<'a> {
 
 
             let parent = GenericParentStructure::new(
-                (*chunk_obj.position()).clone(), // might be bad? - we could get chunk_x and chunk_z
+                chunk_obj.position().clone(),
                 &*structure.id,
                 children,
                 Properties::new(structure.others.clone())
@@ -164,11 +166,11 @@ impl<'a> BlockLoaderV3465<'a> {
     }
 }
 
-impl<'a> BlockLoader<'a> for BlockLoaderV3465<'a> {
+impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
     fn get_region_files(&self, world_path: PathBuf) -> Vec<Region> {
-        let overworld_region_folder = world_path.join((if self.version.world_type() == &WorldType::MULTIPLAYER { "world/" } else { "" }).to_owned() + "region");
-        let nether_region_folder = world_path.join((if self.version.world_type() == &WorldType::MULTIPLAYER { "world/" } else { "" }).to_owned() + "DIM-1/region");
-        let end_region_folder = world_path.join((if self.version.world_type() == &WorldType::MULTIPLAYER { "world/" } else { "" }).to_owned() + "DIM1/region");
+        let overworld_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER { "world/" } else { "" }).to_owned() + "region");
+        let nether_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER { "world/" } else { "" }).to_owned() + "DIM-1/region");
+        let end_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER { "world/" } else { "" }).to_owned() + "DIM1/region");
 
 
         let mut regions = Vec::<Region>::new();
@@ -193,7 +195,7 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465<'a> {
                 region.position.dimension(),
             );
             if let Some(chunk_data) = chunk_data {
-                let chunk_ref = chunk_data.0.position().to_chunk_ref();
+                let chunk_ref = chunk_data.0.position().reference();
                 chunks.push(chunk_data.0);
                 new_structures.entry(chunk_ref).or_insert_with(Vec::new).extend(chunk_data.1);
             }
@@ -219,12 +221,11 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465<'a> {
         let chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");
 
         let mut chunk = Chunk::new(
-            self.version,
-            Position::new(
+            self.version.clone(),
+            ChunkPosition::new(
+                chunk_nbt.x_pos,
+                chunk_nbt.z_pos,
                 dimension,
-                chunk_nbt.x_pos as f32,
-                0f32,
-                chunk_nbt.z_pos as f32,
             ),
             chunk_nbt.data_version,
             Tick::new(chunk_nbt.inhabited_time as usize),

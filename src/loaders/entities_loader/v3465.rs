@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::path::PathBuf;
+use std::sync::Arc;
 use fastnbt::Value;
 use super::loader::{EntityLoader};
 use crate::models::other::region::{Region, RegionType};
@@ -12,14 +13,14 @@ use crate::models::entity::entity::{Entity, EntityType, MobEntity};
 use crate::models::other::position::EntityPosition;
 use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
-use crate::models::world::world::WorldType;
+use crate::models::world::world::WorldKind;
 // TODO: Support other dimensions (custom paths)
 
-pub(super) struct EntityLoaderV3465<'a> {
-    pub(crate) version: &'a Version
+pub(super) struct EntityLoaderV3465 {
+    pub(crate) version: Arc<Version>
 }
 
-impl<'a> EntityLoaderV3465<'a> {
+impl EntityLoaderV3465 {
     fn populate_entity_list(&self, entity_list: &mut Vec<Entity>, chunk_nbt: NBTChunk, dimension: &str) {
         for entity in chunk_nbt.entities {
             if let Value::IntArray(arr) = entity.uuid {
@@ -43,12 +44,12 @@ impl<'a> EntityLoaderV3465<'a> {
 }
 
 
-impl<'a> EntityLoader<'a> for EntityLoaderV3465<'a> {
+impl<'a> EntityLoader<'a> for EntityLoaderV3465 {
     // TODO: I dont really like the fact that paths are duplicates in all loaders, etc.
     fn get_region_files(&self, world_path: PathBuf) -> Vec<Region> {
-        let overworld_region_folder = world_path.join((if self.version.world_type() == &WorldType::MULTIPLAYER {"world/"} else {""}).to_owned() + "entities");
-        let nether_region_folder = world_path.join((if self.version.world_type() == &WorldType::MULTIPLAYER {"world/"} else {""}).to_owned() + "DIM-1/entities");
-        let end_region_folder = world_path.join((if self.version.world_type() == &WorldType::MULTIPLAYER {"world/"} else {""}).to_owned() + "DIM1/entities");
+        let overworld_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER {"world/"} else {""}).to_owned() + "entities");
+        let nether_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER {"world/"} else {""}).to_owned() + "DIM-1/entities");
+        let end_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER {"world/"} else {""}).to_owned() + "DIM1/entities");
 
         let mut regions = Vec::<Region>::new();
 

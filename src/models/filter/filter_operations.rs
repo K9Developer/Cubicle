@@ -1,4 +1,5 @@
 use crate::models::filter::filter::ComparableValue;
+use crate::utils::position_utils::is_position_within_bounding_box;
 
 #[derive(Clone, Copy, Debug)]
 pub enum FilterOperation {
@@ -30,7 +31,9 @@ impl FilterOperation {
             },
             FilterOperation::Within => match (a, b) {
                 (ComparableValue::Text(sub), ComparableValue::Text(s)) => Some(s.contains(sub)),
-                (ComparableValue::Position(p), ComparableValue::List(poses)) => unimplemented!(), // within a box TODO
+                (ComparableValue::Position(p), ComparableValue::BoundingBox(s, e)) => {
+                    Some(is_position_within_bounding_box(&p, s, e))
+                },
                 _ => None
             }
         }

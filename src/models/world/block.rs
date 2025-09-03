@@ -66,6 +66,15 @@ impl PartialEq for Block {
 
 impl Eq for Block {}
 
+impl From<&str> for Block {
+    fn from(t: &str) -> Self {
+        Self {
+            name: t.to_string(),
+            extra: Properties::new(HashMap::new()),
+            null_flag: false,
+        }
+    }
+}
 
 /// --------- TESTS ---------
 

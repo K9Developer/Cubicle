@@ -4,6 +4,7 @@ use crate::constants::versions::Version;
 use crate::models::other::region::Region;
 use crate::models::world::chunk::Chunk;
 use std::path::PathBuf;
+use std::sync::Arc;
 use crate::models::world_structures::generic_structure::GenericParentStructure;
 // TODO: Add more funcs and lazy loading like empty_load all regions so we get metadata of all chunks and we can count them, etc. - Think of a system later
 
@@ -18,7 +19,7 @@ pub trait BlockLoader<'a> {
     ) -> Option<(Chunk<'a>, Vec<GenericParentStructure>)>;
 }
 
-pub fn get_block_loader(version: &Version) -> Box<dyn BlockLoader + '_> {
+pub fn get_block_loader<'a>(version: Arc<Version>) -> Box<dyn BlockLoader<'a>> {
     match version.data.version_data {
         3465 => Box::new(BlockLoaderV3465 { version }),
         _ => panic!(),
