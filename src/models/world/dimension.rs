@@ -39,6 +39,7 @@ impl <'a> Dimension<'a> {
     pub fn chunk_mut(&mut self, chunk_position: (i32, i32)) -> Option<ChunkType<'a>> {
         self.chunks.get_mut(&chunk_position).cloned()
     }
+    pub fn len(&self) -> usize { self.chunks.len() }
 
     pub fn set_chunk(&mut self, chunk: Chunk<'a>) {
         let pos = chunk.position();

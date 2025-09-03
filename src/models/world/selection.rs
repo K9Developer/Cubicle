@@ -17,8 +17,8 @@ pub struct Selection<'a> {
 
 // TODO: This takes space and speed and it should just be an abstraction, i dont really like this... Figure out how to make this cheaper
 impl<'a> Selection<'a> {
-    pub fn new(world: WorldType<'a>) -> Self {
-        let world = world.clone();
+    pub fn new(world: &WorldType<'a>) -> Self {
+        let world = (*world).clone();
         let v = {
             let w = world.lock().unwrap();
             w.version()

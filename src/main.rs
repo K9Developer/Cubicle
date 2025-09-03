@@ -94,29 +94,26 @@ fn main() {
     let v = VersionManager::get("1.20.1", WorldKind::SINGLEPLAYER);
     let world = World::new("C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test".parse().unwrap(), v);
     world.lock().unwrap().register_regions();
-    world.lock().unwrap().load_region(Position::new("overworld", 0, 0, 0));
 
-    let ls = LocalStructure::new()
-        .add((1, 0, 0), "minecraft:stone")
-        .add( (0, 0, 0), "minecraft:diamond_block" )
-        .add( (0, 0, 1), "minecraft:diamond_block" );
+    let mut s = Instant::now();
+    world.lock().unwrap().load_region(Position::new("overworld", 0, 0, 0));
+    let mut e = s.elapsed();
+    println!("Time elapsed in load_region() is: {:?}", e);
+    println!("Loaded {} chunks!", world.lock().unwrap().dimension("overworld").unwrap().len());
 
     let block_filter = Filter::And(vec![
         Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:stone".into())),
-        Filter::Compare(FilterKey::X_POSITION.into(), FilterOperation::Equals, 2.into()),
-        Filter::Compare(FilterKey::Z_POSITION.into(), FilterOperation::Equals, 2.into()),
+        Filter::Compare(FilterKey::X_POSITION.into(), FilterOperation::Equals, 3.into()),
+        Filter::Compare(FilterKey::Z_POSITION.into(), FilterOperation::Equals, 3.into()),
     ]);
 
-    let w = world.clone();
-    let mut selection = Selection::new(w)
+    let mut selection = Selection::new(&world)
         .selection_add_chunk_position(ChunkPosition::new(0,0,"overworld"));
-
-    // selection.blocks(|b| {
-    //     println!("{}", b);
-    //     true
-    // });
+    println!("Created section");
+    s = Instant::now();
     let bs = selection.find_blocks(block_filter, 0);
-    println!("Found {} stone blocks in the column:", bs.len());
+    e = s.elapsed();
+    println!("Found {} stone blocks in the column in {:?}:", bs.len(), e);
     for b in bs {
         println!("\t{} at {}", b.id(), b.position());
     }
