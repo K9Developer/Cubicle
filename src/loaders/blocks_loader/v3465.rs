@@ -7,7 +7,6 @@ use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
 use crate::models::world::block::PaletteBlock;
 use crate::models::world::chunk::Chunk;
-use crate::models::world::world::WorldKind;
 use fastnbt::Value;
 use std::cmp::{max, min};
 use std::collections::HashMap;
@@ -17,8 +16,10 @@ use crate::models::other::properties::Properties;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::stores::biome_store::BiomeStore;
 use crate::models::stores::block_store::BlockStore;
+use crate::models::stores::heightmap_store::HeightmapStore;
 use crate::models::stores::structure_store::StructureStoreReference;
 use crate::models::world_structures::generic_structure::{BoundingBox, GenericChildStructure, GenericParentStructure};
+use crate::types::{HeightmapKind, WorldKind};
 use crate::utils::generic_utils::bit_length;
 // TODO: Support other dimensions (custom paths)
 
@@ -34,10 +35,9 @@ impl BlockLoaderV3465 {
 
         for &long_value in longs {
             let mut shifted_value = long_value as usize;
-            let blocks_to_process = min(entries_per_long, max_entries - current_entry_count);
 
-
-            for _ in 0..blocks_to_process {
+            for _ in 0..entries_per_long {
+                if current_entry_count == max_entries { return; }
                 let old_palette_index = shifted_value & mask;
                 *output_slice.get_unchecked_mut(current_entry_count) = *index_replacement_map.get_unchecked(old_palette_index);
                 shifted_value >>= bits_per_entry;
@@ -112,11 +112,23 @@ impl BlockLoaderV3465 {
         section
     }
 
-    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, chunk_nbt: NBTChunk) {
-        let (block_store, biome_store) = chunk_obj.stores_mut();
+    pub unsafe fn parse_chunk_heightmaps(&self, heightmap_nbt: Option<Value>, kind: HeightmapKind, store: &mut HeightmapStore) {
+        if let Some(Value::LongArray(arr)) = heightmap_nbt {
+            let heightmap_data: Vec<i64> = arr.into_inner();
+            store.get_kind_mut(kind).set_via_longs(heightmap_data);
+        }
+    }
+
+    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, mut chunk_nbt: NBTChunk) {
+        let (block_store, biome_store, heightmap_store) = chunk_obj.stores_mut();
 
         let section_block_count = (self.version.data.section_height * self.version.data.chunk_size * self.version.data.chunk_size) as usize;
         let section_biome_count = section_block_count / BIOME_CELL_SIZE.pow(3) as usize;
+
+        self.parse_chunk_heightmaps(chunk_nbt.heightmaps.ocean_floor.take(), HeightmapKind::Ground, heightmap_store);
+        self.parse_chunk_heightmaps(chunk_nbt.heightmaps.motion_blocking.take(), HeightmapKind::MotionBlocking, heightmap_store);
+        self.parse_chunk_heightmaps(chunk_nbt.heightmaps.motion_blocking_no_leaves.take(), HeightmapKind::MotionBlockingNoLeaves, heightmap_store);
+        self.parse_chunk_heightmaps(chunk_nbt.heightmaps.world_surface.take(), HeightmapKind::SkyExposed, heightmap_store);
 
         for mut section in chunk_nbt.sections {
             section = self.parse_section_biomes(section, biome_store, section_biome_count);
@@ -168,9 +180,9 @@ impl BlockLoaderV3465 {
 
 impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
     fn get_region_files(&self, world_path: PathBuf) -> Vec<Region> {
-        let overworld_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER { "world/" } else { "" }).to_owned() + "region");
-        let nether_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER { "world/" } else { "" }).to_owned() + "DIM-1/region");
-        let end_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER { "world/" } else { "" }).to_owned() + "DIM1/region");
+        let overworld_region_folder = world_path.join((if self.version.world_type() == &WorldKind::Multiplayer { "world/" } else { "" }).to_owned() + "region");
+        let nether_region_folder = world_path.join((if self.version.world_type() == &WorldKind::Multiplayer { "world/" } else { "" }).to_owned() + "DIM-1/region");
+        let end_region_folder = world_path.join((if self.version.world_type() == &WorldKind::Multiplayer { "world/" } else { "" }).to_owned() + "DIM1/region");
 
 
         let mut regions = Vec::<Region>::new();

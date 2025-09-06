@@ -1,5 +1,5 @@
 use cubicle::constants::versions::{VersionManager};
-use cubicle::models::world::world::{WithLock, World, WorldKind};
+use cubicle::models::world::world::{WithLock, World};
 use std::time::Instant;
 use cubicle::models::filter::comparable_value::ComparableValue;
 use cubicle::models::filter::filter::Filter;
@@ -7,9 +7,10 @@ use cubicle::models::filter::filter_keys::FilterKey;
 use cubicle::models::filter::filter_operations::FilterOperation;
 use cubicle::models::other::region::{Region, RegionType};
 use cubicle::models::positions::chunk_position::ChunkPosition;
+use cubicle::models::positions::whole_position::Position;
 use cubicle::models::world::selection::{Selection, SelectionBuilder};
 use cubicle::traits::access::prelude::{BlockReader, EntityReader};
-use cubicle::types::{RegionPosition};
+use cubicle::types::{HeightmapKind, RegionPosition, WorldKind};
 use cubicle::utils::position_utils::chunk_offset_to_position;
 // TODO: Finish all todos before doing more versions!
 /*
@@ -47,17 +48,30 @@ Up next:
 
 fn main() {
     let world_path = "C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test";
-    let version = VersionManager::get("1.20.1", WorldKind::SINGLEPLAYER);
+    let version = VersionManager::get("1.20.1", WorldKind::Singleplayer);
     let world = World::new(world_path.parse().unwrap(), version);
 
     let mut chunks_loaded = 0;
     world.with(|w| {
         w.register_regions();
+        let s = Instant::now();
         w.load_region(RegionPosition::new(0, 0, "overworld"));
+        let e = s.elapsed();
+        println!("Loaded region in {:?}", e);
         chunks_loaded = w.dimension("overworld").unwrap().chunk_count();
     });
 
     println!("Loaded {} chunks!", chunks_loaded);
+
+    world.with(|w| {
+        let dim = w.dimension("overworld").unwrap();
+        let chu = dim.chunk((0,0)).unwrap();
+        let chunk = chu.lock().unwrap();
+        println!("SkyExposed: {:?}", chunk.heightmap_store().get_kind(HeightmapKind::SkyExposed).get_highest_y_at_position(14, 10));
+        println!("MotionBlockingNoLeaves: {:?}", chunk.heightmap_store().get_kind(HeightmapKind::MotionBlockingNoLeaves).get_highest_y_at_position(14, 10));
+        println!("MotionBlocking: {:?}", chunk.heightmap_store().get_kind(HeightmapKind::MotionBlocking).get_highest_y_at_position(14, 10));
+        println!("Ground: {:?}", chunk.heightmap_store().get_kind(HeightmapKind::Ground).get_highest_y_at_position(14, 10));
+    });
 
     let block_filter = Filter::And(vec![
         Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:stone".into())),
@@ -77,14 +91,13 @@ fn main() {
     //     true
     // });
 
-    selection.find_entities(
-        entity_filter,
-        |e| {
-            println!("{:?}", e);
-            true
-        }
-    )
-    // TODO: A chunk can return FullEntity which has world_ref, then we can change and commit. The dim will have an entity store and the chunk will store indices.
+    // selection.find_entities(
+    //     entity_filter,
+    //     |e| {
+    //         println!("{:?}", e);
+    //         true
+    //     }
+    // )
     // TODO: Seems like it searches blocks from y>0
 
 }

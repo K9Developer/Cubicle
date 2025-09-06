@@ -7,7 +7,7 @@ use serde_json;
 use super::config::config;
 use serde::Deserialize;
 use serde_json::{Value, Map};
-use crate::models::world::world::WorldKind;
+use crate::types::WorldKind;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct VersionData {
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn display_and_accessors() {
-        let v = Version::from_parts(1, 32, 3, WorldKind::SINGLEPLAYER, vd(-64, 320, 16));
+        let v = Version::from_parts(1, 32, 3, WorldKind::Singleplayer, vd(-64, 320, 16));
         assert_eq!(v.major(), 1);
         assert_eq!(v.minor(), 32);
         assert_eq!(v.patch(), 3);
@@ -133,35 +133,35 @@ mod tests {
 
     #[test]
     fn ordering_by_tuple_semantics() {
-        let a = Version::from_parts(1, 19, 4, WorldKind::SINGLEPLAYER, vd(0, 0, 0));
-        let b = Version::from_parts(1, 20, 0, WorldKind::SINGLEPLAYER, vd(0, 0, 0));
-        let c = Version::from_parts(1, 20, 1, WorldKind::SINGLEPLAYER, vd(0, 0, 0));
+        let a = Version::from_parts(1, 19, 4, WorldKind::Singleplayer, vd(0, 0, 0));
+        let b = Version::from_parts(1, 20, 0, WorldKind::Singleplayer, vd(0, 0, 0));
+        let c = Version::from_parts(1, 20, 1, WorldKind::Singleplayer, vd(0, 0, 0));
 
         assert!(a < b);
         assert!(b < c);
         assert!(a < c);
 
-        let a_same_nums = Version::from_parts(1, 19, 4, WorldKind::SINGLEPLAYER, vd(-64, 320, 16));
+        let a_same_nums = Version::from_parts(1, 19, 4, WorldKind::Singleplayer, vd(-64, 320, 16));
         assert_eq!(a, a_same_nums);
     }
 
     #[test]
     fn equality_ignores_data_field() {
-        let v1 = Version::from_parts(1, 18, 2, WorldKind::SINGLEPLAYER, vd(-64, 256, 16));
-        let v2 = Version::from_parts(1, 18, 2, WorldKind::SINGLEPLAYER, vd(-128, 1024, 32));
+        let v1 = Version::from_parts(1, 18, 2, WorldKind::Singleplayer, vd(-64, 256, 16));
+        let v2 = Version::from_parts(1, 18, 2, WorldKind::Singleplayer, vd(-128, 1024, 32));
         assert_eq!(v1, v2);
 
-        let v3 = Version::from_parts(1, 18, 3, WorldKind::SINGLEPLAYER, vd(-64, 256, 16));
+        let v3 = Version::from_parts(1, 18, 3, WorldKind::Singleplayer, vd(-64, 256, 16));
         assert_ne!(v1, v3);
     }
 
     #[test]
     fn sorting_versions() {
         let mut v = vec![
-            Version::from_parts(1, 20, 1, WorldKind::SINGLEPLAYER, vd(0, 0, 0)),
-            Version::from_parts(1, 19, 4, WorldKind::SINGLEPLAYER, vd(0, 0, 0)),
-            Version::from_parts(1, 20, 0, WorldKind::SINGLEPLAYER, vd(0, 0, 0)),
-            Version::from_parts(2, 0, 0, WorldKind::SINGLEPLAYER, vd(0, 0, 0)),
+            Version::from_parts(1, 20, 1, WorldKind::Singleplayer, vd(0, 0, 0)),
+            Version::from_parts(1, 19, 4, WorldKind::Singleplayer, vd(0, 0, 0)),
+            Version::from_parts(1, 20, 0, WorldKind::Singleplayer, vd(0, 0, 0)),
+            Version::from_parts(2, 0, 0, WorldKind::Singleplayer, vd(0, 0, 0)),
         ];
         v.sort();
 

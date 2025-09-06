@@ -13,7 +13,7 @@ use crate::models::entity::entity::{Entity, EntityType, MobEntity};
 use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
 use crate::models::positions::entity_position::EntityPosition;
-use crate::models::world::world::WorldKind;
+use crate::types::WorldKind;
 use crate::utils::position_utils::chunk_offset_to_position;
 // TODO: Support other dimensions (custom paths)
 
@@ -48,9 +48,9 @@ impl EntityLoaderV3465 {
 impl<'a> EntityLoader<'a> for EntityLoaderV3465 {
     // TODO: I dont really like the fact that paths are duplicates in all loaders, etc.
     fn get_region_files(&self, world_path: PathBuf) -> Vec<Region> {
-        let overworld_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER {"world/"} else {""}).to_owned() + "entities");
-        let nether_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER {"world/"} else {""}).to_owned() + "DIM-1/entities");
-        let end_region_folder = world_path.join((if self.version.world_type() == &WorldKind::MULTIPLAYER {"world/"} else {""}).to_owned() + "DIM1/entities");
+        let overworld_region_folder = world_path.join((if self.version.world_type() == &WorldKind::Multiplayer {"world/"} else {""}).to_owned() + "entities");
+        let nether_region_folder = world_path.join((if self.version.world_type() == &WorldKind::Multiplayer {"world/"} else {""}).to_owned() + "DIM-1/entities");
+        let end_region_folder = world_path.join((if self.version.world_type() == &WorldKind::Multiplayer {"world/"} else {""}).to_owned() + "DIM1/entities");
 
         let mut regions = Vec::<Region>::new();
 

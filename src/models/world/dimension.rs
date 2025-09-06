@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::constants::versions::Version;
-use crate::models::entity::entity::Entity;
 use crate::models::stores::entity_store::{EntityStore, EntityStoreKey};
-use crate::models::world_structures::generic_structure::GenericParentStructure;
 use crate::models::world::chunk::Chunk;
 use crate::models::stores::structure_store::StructureStore;
-use crate::models::world::fulls::full_entity::FullEntity;
-use crate::types::ChunkType;
+use crate::models::world::selection::{Selection, SelectionBuilder};
+use crate::types::{ChunkType, WorldType};
 
 pub struct Dimension {
     dimension_id: String,
@@ -49,6 +47,10 @@ impl Dimension {
     }
     pub fn set_chunks(&mut self, chunks: Vec<Chunk>) {
         for chunk in chunks { self.set_chunk(chunk); }
+    }
+
+    pub fn select<'a>(&self, world: &WorldType<'a>) -> Selection<'a> {
+        SelectionBuilder::new(world).all_dimension_chunks(&self.dimension_id).build()
     }
 
 }

@@ -1,11 +1,11 @@
 use std::sync::Arc;
 use crate::constants::versions::Version;
-use crate::models::entity::entity::Entity;
 use crate::models::other::tick::Tick;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::stores::biome_store::BiomeStore;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::entity_store::EntityStoreKey;
+use crate::models::stores::heightmap_store::HeightmapStore;
 use crate::models::stores::structure_store::StructureStoreReference;
 // TODO: have multiple selector like EntitySelector, then have stuff like remove_entity(selector: EntitySelector) - this will be used in filters too.
 
@@ -22,6 +22,7 @@ pub struct Chunk {
 
     entity_keys: Vec<EntityStoreKey>,
     structures: Vec<StructureStoreReference>,
+    heightmap_store: HeightmapStore,
 
     version: Arc<Version>,
 }
@@ -45,6 +46,7 @@ impl Chunk {
 
             block_store: BlockStore::new(version.clone()),
             biome_store: BiomeStore::new(version.clone()),
+            heightmap_store: HeightmapStore::new(version.clone()),
             version,
 
             entity_keys: Vec::new(),
@@ -67,14 +69,18 @@ impl Chunk {
     pub fn status(&self) -> &String {
         &self.status
     }
-    pub fn stores(&self) -> (&BlockStore, &BiomeStore) { (&self.block_store, &self.biome_store) }
-    pub fn stores_mut(&mut self) -> (&mut BlockStore, &mut BiomeStore) { (&mut self.block_store, &mut self.biome_store) }
+
+    pub fn stores(&self) -> (&BlockStore, &BiomeStore, &HeightmapStore) { (&self.block_store, &self.biome_store, &self.heightmap_store) }
+    pub fn stores_mut(&mut self) -> (&mut BlockStore, &mut BiomeStore, &mut HeightmapStore) { (&mut self.block_store, &mut self.biome_store, &mut self.heightmap_store) }
     pub fn block_store(&self) -> &BlockStore {
         &self.block_store
     }
     pub fn block_store_mut(&mut self) -> &mut BlockStore { &mut self.block_store }
     pub fn biome_store(&self) -> &BiomeStore { &self.biome_store }
     pub fn biome_store_mut(&mut self) -> &mut BiomeStore { &mut self.biome_store }
+    pub fn heightmap_store(&self) -> &HeightmapStore { &self.heightmap_store }
+    pub fn heightmap_store_mut(&mut self) -> &mut HeightmapStore { &mut self.heightmap_store }
+
     pub fn entity_keys(&self) -> &Vec<EntityStoreKey> { &self.entity_keys }
     pub fn entity_count(&self) -> usize { self.entity_keys.len() }
     pub fn structures(&mut self) -> &Vec<StructureStoreReference> {
@@ -97,4 +103,6 @@ impl Chunk {
 
     pub fn add_entity(&mut self, entity_key: EntityStoreKey) { self.entity_keys.push(entity_key); }
     pub fn add_structure(&mut self, structure: StructureStoreReference) { self.structures.push(structure); }
+
+    pub fn recalculate_heightmaps(&mut self) { todo!() } // TODO: Also needs to be called per column when a block changed or something
 }

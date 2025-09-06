@@ -28,6 +28,9 @@ pub struct NBTChunk {
     pub block_ticks: Vec<NBTTileTick>,
     pub structures: NBTStructureList,
 
+    #[serde(rename="Heightmaps")]
+    pub heightmaps: Heightmaps,
+
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
 }
@@ -92,6 +95,18 @@ pub struct NBTStructureList {
     #[serde(rename="References")]
     pub references: HashMap<String, Value>,
     pub starts: HashMap<String, NBTStructure>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Heightmaps {
+    #[serde(rename="MOTION_BLOCKING")]
+    pub motion_blocking: Option<Value>, // highest block that blocks motion
+    #[serde(rename="MOTION_BLOCKING_NO_LEAVES")]
+    pub motion_blocking_no_leaves: Option<Value>, // highest block that blocks motion without leaves included
+    #[serde(rename="OCEAN_FLOOR")]
+    pub ocean_floor: Option<Value>, // the ground, no trees, motion blocking
+    #[serde(rename="WORLD_SURFACE")]
+    pub world_surface: Option<Value>, // the blocks that are exposed to sky (any)
 }
 
 #[derive(Serialize, Deserialize, Debug)]

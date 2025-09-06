@@ -56,3 +56,11 @@ pub fn chunk_offset_to_position(offset: usize, region: &Region) -> (i32, i32) {
 
     (chunk_x, chunk_z)
 }
+
+pub fn world_position_to_relative_chunk_position(x: i32, y: i32, z: i32, chunk_size: i32) -> (i32, i32, i32) {
+    (
+        x.rem_euclid(chunk_size),
+        y.rem_euclid(chunk_size),
+        z.rem_euclid(chunk_size),
+    )
+}

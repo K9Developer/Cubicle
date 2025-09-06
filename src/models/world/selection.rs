@@ -20,8 +20,7 @@ pub struct Selection<'a> {
 
 // TODO: This takes space and speed and it should just be an abstraction, i dont really like this... Figure out how to make this cheaper
 impl<'a> Selection<'a> {
-    pub fn new(world: &WorldType<'a>) -> Self {
-        let world = (*world).clone();
+    pub fn new(world: WorldType<'a>) -> Self {
         let v = {
             let w = world.lock().unwrap();
             w.version()
@@ -206,6 +205,12 @@ pub struct SelectionBuilder<'a> {
 impl<'a> SelectionBuilder<'a> {
     pub fn new(world: &WorldType<'a>) -> Self {
         SelectionBuilder {
+            underlying: Selection::new(world.clone()),
+        }
+    }
+
+    pub fn new_owned(world: WorldType<'a>) -> Self {
+        SelectionBuilder {
             underlying: Selection::new(world),
         }
     }
@@ -223,6 +228,11 @@ impl<'a> SelectionBuilder<'a> {
     pub fn with_chunk(mut self, chunk: ChunkType) -> Self {
         let pos = chunk.lock().unwrap().position().clone();
         self.underlying.cached_chunks.insert(pos, Some(chunk));
+        self
+    }
+
+    pub fn without_chunk(mut self, chunk_pos: ChunkPosition) -> Self {
+        self.underlying.cached_chunks.remove(&chunk_pos);
         self
     }
 

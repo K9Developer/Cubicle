@@ -6,6 +6,7 @@ use crate::constants::versions::Version;
 use crate::loaders::loader::Loader;
 use crate::models::other::region::{Region, RegionType};
 use crate::models::world::dimension::Dimension;
+use crate::models::world::selection::{Selection, SelectionBuilder};
 use crate::types::{RegionPosition, WorldType};
 // TODO: When loading a world have a WorldInfo struct with readonly flag
 
@@ -17,27 +18,35 @@ pub struct World<'a> {
     loader: Loader<'a>,
 
     dimensions: HashMap<String, Dimension>,
-    unloaded_regions: Vec<Region>
-}
+    unloaded_regions: Vec<Region>,
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub enum WorldKind {
-    SINGLEPLAYER,
-    MULTIPLAYER,
+    self_ref: Option<WorldType<'a>>
 }
 
 
 // Generic World API
 impl<'a> World<'a> {
     pub fn new(path: PathBuf, version: Arc<Version>) -> WorldType<'a> {
-        Arc::new(Mutex::new(Box::from(World {
-            path,
-            seed: 0,
-            dimensions: HashMap::new(),
-            unloaded_regions: Vec::new(),
-            loader: Loader::new(version.clone()),
-            version,
-        })))
+        let arc = Arc::new_cyclic(|weak_self| {
+            Mutex::new(
+                Box::from(World {
+                    path,
+                    seed: 0,
+                    dimensions: HashMap::new(),
+                    unloaded_regions: Vec::new(),
+                    loader: Loader::new(version.clone()),
+                    version,
+                    self_ref: None,
+                })
+            )
+        });
+
+        {
+            let mut world = arc.lock().unwrap();
+            world.self_ref = Some(arc.clone());
+        }
+
+        arc
     }
 
     pub fn dimensions(&self) -> &HashMap<String, Dimension> { &self.dimensions }
@@ -47,6 +56,8 @@ impl<'a> World<'a> {
     pub fn path(&self) -> &PathBuf { &self.path }
     pub fn loader(&self) -> &Loader<'a> { &self.loader }
     pub fn version(&self) -> Arc<Version> { self.version.clone() }
+    pub fn get(&self) -> WorldType<'a> { self.self_ref.clone().unwrap() }
+    pub fn select(&self) -> Selection<'a> { SelectionBuilder::new_owned(self.get()).build() }
 
     pub fn set_seed(&mut self, seed: u64) { self.seed = seed; }
     pub fn set_dimension(&mut self, name: String, dimension: Dimension) { self.dimensions.insert(name, dimension); }
@@ -98,33 +109,6 @@ impl<'a> World<'a> {
             // The mutable borrow ends here at the end of each iteration
         }
     }
-
-    // pub fn get_block_at_position(&self, position: Position) -> Option<Block> {
-    //     let (chunk_coords, relative_coords) = position.to_chunk_coords(self.version.data.chunk_size);
-    //     println!("Chunk coords {:?}, relative block coords {:?}, block index {:?}", chunk_coords, relative_coords, relative_coords.to_index(&self.version));
-    //     let dim = self.dimensions.get(position.dimension());
-    //     if dim.is_none() { return None }
-    //     let chunk = dim.unwrap().chunk(chunk_coords);
-    //     if chunk.is_none() { return None }
-    //     chunk.unwrap().block_store().get_block_at_index(relative_coords.to_index(self.version))
-    // }
-    //
-    // // Very temporary until selectors
-    // pub fn get_entities_of_id(&self, id: &str) -> Vec<&Entity> {
-    //     let mut selected_entities = Vec::<&Entity>::new();
-    //     for dim in self.dimensions.values() {
-    //         for entity in dim.entities() {
-    //             match entity {
-    //                 Entity::Player(player) => {},
-    //                 Entity::Mob(mob) => {
-    //                     if mob.id() == id {selected_entities.push(entity);}
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     selected_entities
-    // }
-
 }
 
 // TODO: separate this to somewhere else
