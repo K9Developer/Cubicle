@@ -5,11 +5,12 @@ use crate::models::other::tick::Tick;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::stores::biome_store::BiomeStore;
 use crate::models::stores::block_store::BlockStore;
+use crate::models::stores::entity_store::EntityStoreKey;
 use crate::models::stores::structure_store::StructureStoreReference;
 // TODO: have multiple selector like EntitySelector, then have stuff like remove_entity(selector: EntitySelector) - this will be used in filters too.
 
 #[derive(Debug)]
-pub struct Chunk<'a> {
+pub struct Chunk {
     position: ChunkPosition,
     data_version: i32,
     inhabited_time: Tick,
@@ -19,13 +20,13 @@ pub struct Chunk<'a> {
     block_store: BlockStore,
     biome_store: BiomeStore,
 
-    entities: Vec<&'a Entity>,
+    entity_keys: Vec<EntityStoreKey>,
     structures: Vec<StructureStoreReference>,
 
     version: Arc<Version>,
 }
 
-impl<'a> Chunk<'a> {
+impl Chunk {
     pub fn new(
         version: Arc<Version>,
         position: ChunkPosition,
@@ -33,7 +34,7 @@ impl<'a> Chunk<'a> {
         inhabited_time: Tick,
         last_update: Tick,
         status: String,
-    ) -> Chunk<'a> {
+    ) -> Chunk {
         Chunk {
 
             position,
@@ -46,7 +47,7 @@ impl<'a> Chunk<'a> {
             biome_store: BiomeStore::new(version.clone()),
             version,
 
-            entities: Vec::new(),
+            entity_keys: Vec::new(),
             structures: Vec::new(),
         }
     }
@@ -74,9 +75,8 @@ impl<'a> Chunk<'a> {
     pub fn block_store_mut(&mut self) -> &mut BlockStore { &mut self.block_store }
     pub fn biome_store(&self) -> &BiomeStore { &self.biome_store }
     pub fn biome_store_mut(&mut self) -> &mut BiomeStore { &mut self.biome_store }
-    pub fn entities(&mut self) -> &Vec<&'a Entity> {
-        &self.entities
-    }
+    pub fn entity_keys(&self) -> &Vec<EntityStoreKey> { &self.entity_keys }
+    pub fn entity_count(&self) -> usize { self.entity_keys.len() }
     pub fn structures(&mut self) -> &Vec<StructureStoreReference> {
         &self.structures
     }
@@ -87,18 +87,14 @@ impl<'a> Chunk<'a> {
     pub fn set_last_update(&mut self, last_update: Tick) {
         self.last_update = last_update;
     }
-    pub fn set_status(&mut self, status: &'a str) {
+    pub fn set_status(&mut self, status: &str) {
         self.status = status.to_string();
     }
     pub fn set_block_store(&mut self, block_store: BlockStore) {
         self.block_store = block_store;
     }
-    pub fn set_entities(&mut self, entities: Vec<&'static Entity>) {
-        self.entities = entities;
-    }
+    pub fn set_entities(&mut self, entity_keys: Vec<EntityStoreKey>) { self.entity_keys = entity_keys; }
 
-    pub fn add_entity(&mut self, entity: &'static Entity) {
-        self.entities.push(entity);
-    }
+    pub fn add_entity(&mut self, entity_key: EntityStoreKey) { self.entity_keys.push(entity_key); }
     pub fn add_structure(&mut self, structure: StructureStoreReference) { self.structures.push(structure); }
 }

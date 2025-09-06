@@ -1,8 +1,7 @@
-pub mod constants;
 pub mod extensions;
+pub mod constants;
 pub mod loaders;
 pub mod models;
 pub mod traits;
-pub mod types;
 pub mod utils;
-
+pub mod types;

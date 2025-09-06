@@ -1,3 +1,5 @@
+use crate::constants::constants::{MCA_REGION_SECTOR_SIZE, REGION_CHUNK_LINE};
+use crate::models::other::region::Region;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::positions::whole_position::Position;
 use crate::utils::generic_utils::div_rem_nonzero;
@@ -12,6 +14,12 @@ pub fn block_position_to_chunk_pos_and_block_index(pos: &Position, chunk_size: i
     let index = ((local_y * 16 + local_z) * 16 + local_x) as usize;
 
     (cpos, index)
+}
+
+pub fn world_position_to_chunk_position(x: f64, z: f64, chunk_size: i32) -> (i32, i32) {
+    let chunk_x = (x.floor() as i32).div_euclid(chunk_size);
+    let chunk_z = (z.floor() as i32).div_euclid(chunk_size);
+    (chunk_x, chunk_z)
 }
 
 pub fn chunk_position_to_world_position(chunk_pos: &ChunkPosition, chunk_size: i32) -> (i32, i32) {
@@ -36,4 +44,15 @@ pub fn is_position_within_bounding_box(position: &Position, corner1: &Position, 
     position.x() >= min_x && position.x() <= max_x &&
     position.y() >= min_y && position.y() <= max_y &&
     position.z() >= min_z && position.z() <= max_z
+}
+
+pub fn chunk_offset_to_position(offset: usize, region: &Region) -> (i32, i32) {
+    let index = offset / 4;
+    let local_x = (index % REGION_CHUNK_LINE) as i32;
+    let local_z = (index / REGION_CHUNK_LINE) as i32;
+
+    let chunk_x = region.position.x() * (REGION_CHUNK_LINE as i32) + local_x;
+    let chunk_z = region.position.z() * (REGION_CHUNK_LINE as i32) + local_z;
+
+    (chunk_x, chunk_z)
 }

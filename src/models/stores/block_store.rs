@@ -2,7 +2,7 @@ use std::sync::Arc;
 use crate::constants::versions::Version;
 use crate::models::other::fast_set::FastSet;
 use crate::models::positions::whole_position::Position;
-use crate::models::world::block::Block;
+use crate::models::world::block::PaletteBlock;
 use crate::traits::misc::store::StoreLike;
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub struct QuickLookupData {}
 // z -> x -> y
 #[derive(Debug)]
 pub struct BlockStore {
-    palette: FastSet<Block>,
+    palette: FastSet<PaletteBlock>,
     indices: Vec<usize>,
     version: Arc<Version>,
     qld: QuickLookupData,
@@ -25,7 +25,7 @@ impl BlockStore {
         let total_blocks = (version.data.chunk_size * version.data.chunk_size * height) as usize;
 
         let mut p = FastSet::new();
-        p.insert(Block::new_null());
+        p.insert(PaletteBlock::new_null());
 
         BlockStore {
             palette: p,
@@ -36,32 +36,32 @@ impl BlockStore {
     }
 
     #[inline]
-    pub fn palette(&self) -> &FastSet<Block> { <Self as StoreLike<Block>>::palette(self) }
+    pub fn palette(&self) -> &FastSet<PaletteBlock> { <Self as StoreLike<PaletteBlock>>::palette(self) }
     #[inline(always)]
-    pub fn add_block_to_palette(&mut self, block: Block) -> usize { <Self as StoreLike<Block>>::add_item_to_palette(self, block) }
-    pub fn set_block_with_index(&mut self, index: usize, palette_index: usize) -> bool { <Self as StoreLike<Block>>::set_item_index_at(self, index, palette_index) }
+    pub fn add_block_to_palette(&mut self, block: PaletteBlock) -> usize { <Self as StoreLike<PaletteBlock>>::add_item_to_palette(self, block) }
+    pub fn set_block_with_index(&mut self, index: usize, palette_index: usize) -> bool { <Self as StoreLike<PaletteBlock>>::set_item_index_at(self, index, palette_index) }
     #[inline(always)]
-    pub fn set_blocks_with_slice(&mut self, start_index: usize, palette_indices: &[usize]) { <Self as StoreLike<Block>>::set_items_using_slice(self, start_index, palette_indices) }
-    pub fn get_palette_index_of_block(&self, block: &Block) -> Option<usize> { <Self as StoreLike<Block>>::get_palette_index_of_item(self, block) }
-    pub fn set_block_at_index(&mut self, index: usize, block: Block) -> bool { <Self as StoreLike<Block>>::set_item_at_index(self, index, block) }
-    pub fn set_block_at_position(&mut self, relative_position: Position, block: Block) -> bool { <Self as StoreLike<Block>>::set_item_at_position(self, relative_position, block) }
-    pub fn get_block_at_index(&self, index: usize) -> Option<Block> { <Self as StoreLike<Block>>::get_item_at_index(self, index) }
-    pub fn get_block_at_position(&self, relative_position: Position) -> Option<Block> { <Self as StoreLike<Block>>::get_item_at_position(self, relative_position) }
+    pub fn set_blocks_with_slice(&mut self, start_index: usize, palette_indices: &[usize]) { <Self as StoreLike<PaletteBlock>>::set_items_using_slice(self, start_index, palette_indices) }
+    pub fn get_palette_index_of_block(&self, block: &PaletteBlock) -> Option<usize> { <Self as StoreLike<PaletteBlock>>::get_palette_index_of_item(self, block) }
+    pub fn set_block_at_index(&mut self, index: usize, block: PaletteBlock) -> bool { <Self as StoreLike<PaletteBlock>>::set_item_at_index(self, index, block) }
+    pub fn set_block_at_position(&mut self, relative_position: Position, block: PaletteBlock) -> bool { <Self as StoreLike<PaletteBlock>>::set_item_at_position(self, relative_position, block) }
+    pub fn get_block_at_index(&self, index: usize) -> Option<PaletteBlock> { <Self as StoreLike<PaletteBlock>>::get_item_at_index(self, index) }
+    pub fn get_block_at_position(&self, relative_position: Position) -> Option<PaletteBlock> { <Self as StoreLike<PaletteBlock>>::get_item_at_position(self, relative_position) }
     #[inline]
-    pub fn indices_slice(&self) -> &[usize] { <Self as StoreLike<Block>>::indices_slice(self) }
+    pub fn indices_slice(&self) -> &[usize] { <Self as StoreLike<PaletteBlock>>::indices_slice(self) }
     #[inline]
-    pub fn indices_slice_mut(&mut self) -> &mut [usize] { <Self as StoreLike<Block>>::indices_slice_mut(self) }
-    pub fn blocks(&self) -> impl Iterator<Item=Block> {
+    pub fn indices_slice_mut(&mut self) -> &mut [usize] { <Self as StoreLike<PaletteBlock>>::indices_slice_mut(self) }
+    pub fn blocks(&self) -> impl Iterator<Item=PaletteBlock> {
         self.indices.iter().map(|i| self.palette[*i].clone())
     }
 }
 
-impl StoreLike<Block> for BlockStore {
+impl StoreLike<PaletteBlock> for BlockStore {
     #[inline]
-    fn palette(&self) -> &FastSet<Block> { &self.palette }
+    fn palette(&self) -> &FastSet<PaletteBlock> { &self.palette }
 
     #[inline(always)]
-    fn add_item_to_palette(&mut self, block: Block) -> usize {
+    fn add_item_to_palette(&mut self, block: PaletteBlock) -> usize {
         self.palette.insert(block)
     }
 
@@ -87,7 +87,7 @@ impl StoreLike<Block> for BlockStore {
         self.indices[start_index..end_index].copy_from_slice(palette_indices);
     }
 
-    fn get_palette_index_of_item(&self, block: &Block) -> Option<usize> {
+    fn get_palette_index_of_item(&self, block: &PaletteBlock) -> Option<usize> {
         for (i, b) in self.palette.iter().enumerate() {
             if !b.is_null() && b == block {
                 return Some(i);
@@ -96,7 +96,7 @@ impl StoreLike<Block> for BlockStore {
         None
     }
 
-    fn set_item_at_index(&mut self, index: usize, block: Block) -> bool {
+    fn set_item_at_index(&mut self, index: usize, block: PaletteBlock) -> bool {
         if index >= self.indices.len() { return false; }
         let palette_index = self
             .get_palette_index_of_item(&block)
@@ -108,19 +108,19 @@ impl StoreLike<Block> for BlockStore {
         true
     }
 
-    fn set_item_at_position(&mut self, relative_position: Position, block: Block) -> bool {
+    fn set_item_at_position(&mut self, relative_position: Position, block: PaletteBlock) -> bool {
         let index = relative_position.to_index(self.version.clone());
         self.set_item_at_index(index, block)
     }
 
-    fn get_item_at_index(&self, index: usize) -> Option<Block> {
+    fn get_item_at_index(&self, index: usize) -> Option<PaletteBlock> {
         if index >= self.indices.len() { return None; }
         let palette_index = self.indices[index];
         let block = &self.palette[palette_index];
         if block.is_null() { None } else { Some(block.clone()) }
     }
 
-    fn get_item_at_position(&self, relative_position: Position) -> Option<Block> {
+    fn get_item_at_position(&self, relative_position: Position) -> Option<PaletteBlock> {
         let index = relative_position.to_index(self.version.clone());
         self.get_item_at_index(index)
     }

@@ -7,7 +7,7 @@ pub enum RegionType {
     Entity
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Region {
     pub position: RegionPosition,
     pub path: PathBuf,

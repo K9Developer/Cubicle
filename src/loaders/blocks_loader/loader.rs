@@ -10,13 +10,13 @@ use crate::models::world_structures::generic_structure::GenericParentStructure;
 
 pub trait BlockLoader<'a> {
     fn get_region_files(&self, world_path: PathBuf) -> Vec<Region>;
-    fn parse_region(&self, region: &Region) -> (Vec<Chunk<'a>>, HashMap<i64, Vec<GenericParentStructure>>);
+    fn parse_region(&self, region: &Region) -> (Vec<Chunk>, HashMap<i64, Vec<GenericParentStructure>>);
     fn parse_chunk(
         &self,
         data: Vec<u8>,
         compression_type: u8,
         dimension: &str,
-    ) -> Option<(Chunk<'a>, Vec<GenericParentStructure>)>;
+    ) -> Option<(Chunk, Vec<GenericParentStructure>)>;
 }
 
 pub fn get_block_loader<'a>(version: Arc<Version>) -> Box<dyn BlockLoader<'a>> {

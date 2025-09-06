@@ -1,8 +1,9 @@
+use crate::models::entity::entity::Entity;
 pub use crate::models::filter::comparable_value::ComparableValue;
 use crate::models::filter::filter_operations::FilterOperation;
 use crate::models::filter::local_structure::LocalStructure;
-use crate::models::world::full_block::FullBlock;
-use crate::utils::position_utils::is_position_within_bounding_box;
+use crate::models::world::fulls::full_block::FullBlock;
+use crate::models::world::fulls::full_entity::FullEntity;
 
 #[derive(Clone, Debug)]
 pub enum Filter<'a> {
@@ -28,6 +29,34 @@ impl<'a> Filter<'a> {
             "key:id" => ComparableValue::Text(b.id().to_owned()),
             _ => {
                 match b.properties().get(k) {
+                    Some(p) => ComparableValue::from_nbt_value(p),
+                    None => { ComparableValue::Null }
+                }
+            }
+        }
+    }
+
+    fn entity_key_to_value(k: &str, e: &FullEntity) -> ComparableValue {
+        match k {
+            "key:x" => ComparableValue::Int(e.entity().base().position().x() as i64),
+            "key:y" => ComparableValue::Int(e.entity().base().position().y() as i64),
+            "key:z" => ComparableValue::Int(e.entity().base().position().z() as i64),
+            "key:pos" => ComparableValue::EntityPosition(e.entity().base().position().clone()),
+            "key:id" => {
+                match e.entity() {
+                    Entity::Player(_) => { todo!() } // Need to do Player logic
+                    Entity::Mob(m) => ComparableValue::Text(m.id().to_owned())
+                }
+            },
+            _ => {
+                let props = {
+                    match e.entity() {
+                        Entity::Player(p) => { todo!() } // Need to do Player logic
+                        Entity::Mob(m) => { m.properties() }
+                    }
+                };
+
+                match props.get(k) {
                     Some(p) => ComparableValue::from_nbt_value(p),
                     None => { ComparableValue::Null }
                 }
@@ -66,6 +95,40 @@ impl<'a> Filter<'a> {
                 true
             }
             Filter::LocalStructure(_) => { todo!() }
+        }
+    }
+
+    pub fn matches_entity(&self, entity: &FullEntity) -> bool {
+        match self {
+            Filter::Compare(key, op, val) => {
+                let actual_val = Filter::entity_key_to_value(key, entity);
+                let result = op.eval(val, &actual_val);
+                if let Some(result) = result {
+                    result
+                } else {
+                    // bad evaluation // TODO: better handling?
+                    return false;
+                }
+            }
+            Filter::And(filters) => {
+                for filter in filters {
+                    if !filter.matches_entity(entity) { return false; }
+                }
+                true
+            }
+            Filter::Or(filters) => {
+                for filter in filters {
+                    if filter.matches_entity(entity) { return true; }
+                }
+                false
+            }
+            Filter::Not(filters) => {
+                for filter in filters {
+                    if filter.matches_entity(entity) { return false; }
+                }
+                true
+            }
+            _ => false
         }
     }
 }

@@ -7,24 +7,24 @@ use crate::models::other::properties::Properties;
 // TODO: Comparison of blocks is very slow since it has to check the whole extra thing - make some kind of hash?
 
 #[derive(Clone)]
-pub struct Block {
+pub struct PaletteBlock {
     name: String,
     extra: Properties,
     null_flag: bool,
 }
 
-impl Block {
-    pub fn new(name: &str, extra: Option<HashMap<String, Value>>) -> Block {
+impl PaletteBlock {
+    pub fn new(name: &str, extra: Option<HashMap<String, Value>>) -> PaletteBlock {
         // TODO: Enforce a namespace in a faster way
-        Block {
+        PaletteBlock {
             name: if name.contains(":") { name.to_string() } else { ("minecraft:".to_owned() + name).to_owned() },
             extra: Properties::new(extra.unwrap_or_default()),
             null_flag: false,
         }
     }
 
-    pub fn new_null() -> Block {
-        Block {
+    pub fn new_null() -> PaletteBlock {
+        PaletteBlock {
             name: "cubicle:null_block".to_string(),
             extra: Properties::new(HashMap::new()),
             null_flag: true,
@@ -39,7 +39,7 @@ impl Block {
     pub fn is_null(&self) -> bool { self.null_flag }
 }
 
-impl fmt::Debug for Block {
+impl fmt::Debug for PaletteBlock {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Block")
             .field("name", &self.name)
@@ -48,7 +48,7 @@ impl fmt::Debug for Block {
     }
 }
 
-impl fmt::Display for Block {
+impl fmt::Display for PaletteBlock {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -58,15 +58,15 @@ impl fmt::Display for Block {
     }
 }
 
-impl PartialEq for Block {
+impl PartialEq for PaletteBlock {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name && self.extra == other.extra
     }
 }
 
-impl Eq for Block {}
+impl Eq for PaletteBlock {}
 
-impl From<&str> for Block {
+impl From<&str> for PaletteBlock {
     fn from(t: &str) -> Self {
         Self {
             name: t.to_string(),
@@ -87,18 +87,18 @@ mod tests {
 
     #[test]
     fn create_block() {
-        let b = Block::new("minecraft:air", None);
+        let b = PaletteBlock::new("minecraft:air", None);
         println!("{:?}", b);
     }
 
     #[test]
     fn block_name_and_namespace() {
-        let b = Block::new("minecraft2:air", None);
+        let b = PaletteBlock::new("minecraft2:air", None);
         assert_eq!("minecraft2:air", b.name());
         assert_eq!("air", b.id());
         assert_eq!("minecraft2", b.namespace());
 
-        let b = Block::new("air", None);
+        let b = PaletteBlock::new("air", None);
         assert_eq!("minecraft:air", b.name());
         assert_eq!("air", b.id());
         assert_eq!("minecraft", b.namespace());
@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn block_properties() {
-        let mut b = Block::new(
+        let mut b = PaletteBlock::new(
             "test",
             Some(HashMap::from([
                 ("id".to_string(), Value::String("minecraft:chest".into())),
@@ -175,8 +175,8 @@ mod tests {
 
     #[test]
     fn equals_ignores_map_insert_order() {
-        let a = Block::new("minecraft:stone", Some(map_order_a()));
-        let b = Block::new("minecraft:stone", Some(map_order_b()));
+        let a = PaletteBlock::new("minecraft:stone", Some(map_order_a()));
+        let b = PaletteBlock::new("minecraft:stone", Some(map_order_b()));
         assert_eq!(a, b);
     }
 
@@ -196,37 +196,37 @@ mod tests {
         let mut extra2 = HashMap::new();
         extra2.insert("pos".into(), Value::Compound(pos2));
 
-        let a = Block::new("minecraft:stone", Some(extra1));
-        let b = Block::new("minecraft:stone", Some(extra2));
+        let a = PaletteBlock::new("minecraft:stone", Some(extra1));
+        let b = PaletteBlock::new("minecraft:stone", Some(extra2));
         assert_eq!(a, b);
     }
 
     #[test]
     fn not_equal_when_name_differs() {
-        let a = Block::new("minecraft:stone", Some(map_order_a()));
-        let b = Block::new("minecraft:dirt",  Some(map_order_a()));
+        let a = PaletteBlock::new("minecraft:stone", Some(map_order_a()));
+        let b = PaletteBlock::new("minecraft:dirt", Some(map_order_a()));
         assert_ne!(a, b);
     }
 
     #[test]
     fn not_equal_when_extra_value_differs() {
-        let a = Block::new("minecraft:stone", Some(map_order_a()));
+        let a = PaletteBlock::new("minecraft:stone", Some(map_order_a()));
 
         let mut changed = map_order_a();
         changed.insert("hp".into(), Value::Int(11));
 
-        let b = Block::new("minecraft:stone", Some(changed));
+        let b = PaletteBlock::new("minecraft:stone", Some(changed));
         assert_ne!(a, b);
     }
 
     #[test]
     fn not_equal_when_extra_keys_differ() {
-        let a = Block::new("minecraft:stone", Some(map_order_a()));
+        let a = PaletteBlock::new("minecraft:stone", Some(map_order_a()));
 
         let mut fewer = HashMap::new();
         fewer.insert("id".into(), Value::String("minecraft:stone".into()));
 
-        let b = Block::new("minecraft:stone", Some(fewer));
+        let b = PaletteBlock::new("minecraft:stone", Some(fewer));
         assert_ne!(a, b);
     }
 }

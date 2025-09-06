@@ -2,16 +2,18 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::sync::Arc;
 use crate::constants::versions::Version;
+use crate::models::entity::entity::Entity;
 use crate::models::filter::filter::Filter;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::positions::whole_position::Position;
-use crate::models::world::full_block::FullBlock;
-use crate::traits::access::prelude::{BlockReader, BlockWriter};
+use crate::models::world::fulls::full_block::FullBlock;
+use crate::models::world::fulls::full_entity::FullEntity;
+use crate::traits::access::prelude::{BlockReader, BlockWriter, EntityReader, EntityWriter};
 use crate::types::{ChunkType, WorldType};
-use crate::utils::position_utils::{block_index_to_block_position, block_position_to_chunk_pos_and_block_index};
+use crate::utils::position_utils::{block_index_to_block_position, block_position_to_chunk_pos_and_block_index, world_position_to_chunk_position};
 
 pub struct Selection<'a> {
-    cached_chunks: HashMap<ChunkPosition, Option<ChunkType<'a>>>,
+    cached_chunks: HashMap<ChunkPosition, Option<ChunkType>>,
     world_ref: WorldType<'a>,
     version: Arc<Version>,
 }
@@ -27,28 +29,7 @@ impl<'a> Selection<'a> {
         Self {cached_chunks: HashMap::new(), world_ref: world, version: v}
     }
 
-    pub fn selection_add_chunk_position(mut self, chunk_pos: ChunkPosition) -> Self {
-        self.cached_chunks.insert(chunk_pos, None);
-        self
-    }
-
-    pub fn selection_remove_chunk_position(&mut self, chunk_pos: ChunkPosition) -> bool {
-        match self.cached_chunks.remove(&chunk_pos) {
-            Some(_) => {true}
-            None => {false}
-        }
-    }
-
-    pub fn selection_add_chunk(&mut self, chunk: ChunkType<'a>) -> &'a mut Selection {
-        let chunk_pos = {
-            let ch = chunk.lock().unwrap();
-            ch.position().clone()
-        };
-        self.cached_chunks.insert(chunk_pos, Some(chunk));
-        self
-    }
-
-    fn lazy_get_chunk(&mut self, chunk_pos: ChunkPosition) -> Option<ChunkType<'a>> {
+    fn lazy_get_chunk(&mut self, chunk_pos: ChunkPosition) -> Option<ChunkType> {
         match self.cached_chunks.entry(chunk_pos) {
             Entry::Occupied(mut occ) => {
                 let chunk_pos = occ.key().clone();
@@ -73,23 +54,26 @@ impl<'a> BlockReader<'a> for Selection<'a> {
         let chunk_size = self.version.data.chunk_size;
         let min_y = self.version.data.lowest_y;
 
-        let keys: Vec<_> = self.cached_chunks.keys().cloned().collect();
-        for chunk_pos in keys {
-            let mut block_position = block_index_to_block_position(&chunk_pos, 0, chunk_size, min_y);
-            if let Some(chunk) = self.lazy_get_chunk(chunk_pos) {
-                let lch = chunk.lock().unwrap();
-                for b in lch.block_store().blocks() {
-                    if !callback(FullBlock::new_with_data(self.world_ref.clone(), b, block_position.clone())) { return; };
+        let chunk_poses = self.cached_chunks.keys().cloned().collect::<Vec<_>>();
+        for chunk_pos in chunk_poses {
+            let chunk = match self.lazy_get_chunk(chunk_pos) {
+                Some(c) => c,
+                None => continue,
+            };
+            let actual_chunk = chunk.lock().unwrap();
 
-                    // position updates, maybe faster than re-calculating, havent tested
-                    block_position.set_x(block_position.x() + 1);
-                    if block_position.x() == chunk_size {
-                        block_position.set_x(0);
-                        block_position.set_z(block_position.z() + 1);
-                        if block_position.z() == chunk_size {
-                            block_position.set_z(0);
-                            block_position.set_y(block_position.y() + 1);
-                        }
+            let mut block_position = block_index_to_block_position(actual_chunk.position(), 0, chunk_size, min_y);
+            for b in actual_chunk.block_store().blocks() {
+                if !callback(FullBlock::new_with_data(&self.world_ref, b, block_position.clone())) { return; };
+
+                // position updates, maybe faster than re-calculating, havent tested
+                block_position.set_x(block_position.x() + 1);
+                if block_position.x() == chunk_size {
+                    block_position.set_x(0);
+                    block_position.set_z(block_position.z() + 1);
+                    if block_position.z() == chunk_size {
+                        block_position.set_z(0);
+                        block_position.set_y(block_position.y() + 1);
                     }
                 }
             }
@@ -114,7 +98,7 @@ impl<'a> BlockReader<'a> for Selection<'a> {
                 let lch = ch.lock().unwrap();
                 if let Some(local_block) = lch.block_store().get_block_at_index(relative_index) {
                     let block_position = block_index_to_block_position(lch.position(), relative_index, chunk_size, lowest_y);
-                    return Some(FullBlock::new_with_data(self.world_ref.clone(), local_block, block_position));
+                    return Some(FullBlock::new_with_data(&self.world_ref, local_block, block_position));
                 }
                 None
             }
@@ -122,32 +106,149 @@ impl<'a> BlockReader<'a> for Selection<'a> {
         }
     }
 
-    // limit of 0 is infinite
-    fn find_blocks(&mut self, filter: Filter, limit: usize) -> Vec<FullBlock<'a>> {
+    fn find_blocks<F>(&mut self, filter: Filter, mut callback: F) where F: FnMut(FullBlock<'a>) -> bool {
         // TODO: We can do a ton of optimizations here like using indexes for faster lookup
-
-        let mut blocks = Vec::new();
-
         self.blocks(|block| {
             if filter.matches_block(&block) {
-                if limit != 0 && blocks.len() >= limit { return false; }
-                blocks.push(block);
+                if !callback(block) { return false; }
             }
             return true;
         });
+    }
+}
 
-        blocks
+impl EntityReader for Selection<'_> {
+    fn entities<F>(&mut self, mut callback: F) where F: FnMut(FullEntity) -> bool
+    {
+        let chunk_poses = self.cached_chunks.keys().cloned().collect::<Vec<_>>();
+        for chunk_pos in chunk_poses {
+            let dim_id = chunk_pos.dimension().to_string();
+            let chunk = match self.lazy_get_chunk(chunk_pos) {
+                Some(c) => c,
+                None => continue,
+            };
+            let actual_chunk = chunk.lock().unwrap();
+            for entity_key in actual_chunk.entity_keys() {
+                if !callback(
+                    FullEntity::new(
+                        &self.world_ref,
+                        entity_key.clone(),
+                        dim_id.as_str(),
+                    )
+                ) { return; }
+            }
+        }
+    }
+
+    fn entity_count(&mut self) -> usize {
+        let mut count = 0;
+        let chunk_poses = self.cached_chunks.keys().cloned().collect::<Vec<_>>();
+        for chunk_pos in chunk_poses {
+            let chunk = match self.lazy_get_chunk(chunk_pos) {
+                Some(c) => c,
+                None => continue,
+            };
+            let actual_chunk = chunk.lock().unwrap();
+
+            count += actual_chunk.entity_count();
+        }
+        count
+    }
+
+    fn find_entities<F>(&mut self, filter: Filter, mut callback: F) where F: FnMut(FullEntity) -> bool
+    {
+        self.entities(|entity| {
+            if filter.matches_entity(&entity) {
+                if !callback(entity) { return false; }
+            }
+            return true;
+        });
+    }
+}
+
+impl EntityWriter for Selection<'_> {
+    fn set_entity_at_position(&mut self, entity: Entity) -> bool {
+        let mut world = self.world_ref.lock().unwrap();
+        let dim_id = entity.base().position().dimension();
+        match world.dimension_mut(dim_id) {
+            Some(dimension) => {
+                let entity_pos = entity.base().position();
+                let chunk_pos = world_position_to_chunk_position(entity_pos.x(), entity_pos.z(), self.version.data.chunk_size);
+                let entity_key = dimension.entity_store_mut().add_entity(entity);
+                let chunk = dimension.chunk_mut(chunk_pos);
+                match chunk {
+                    Some(chunk) => {
+                        chunk.lock().unwrap().add_entity(entity_key);
+                        true
+                    },
+                    None => false
+                }
+            },
+            None => { false }
+        }
     }
 }
 
 impl BlockWriter for Selection<'_> {
-    fn set_block_at_relative_position(&mut self, position: Position) -> bool {
-        todo!()
-    }
-
-    fn set_block_at_relative_index(&mut self, index: usize) -> bool {
-        todo!()
+    fn set_block_at_position(&mut self, block: FullBlock) -> bool {
+        if let Some((parent, rel_index)) = block.parent_chunk() {
+            let mut ch = parent.lock().unwrap();
+            ch.block_store_mut().set_block_at_index(rel_index, block.palette_block());
+        }
+        false
     }
 }
 
-// TODO: Convert stuff to return FullBlock and then continue filter.rs at 28, and filter_keys.rs
+pub struct SelectionBuilder<'a> {
+    underlying: Selection<'a>,
+}
+
+impl<'a> SelectionBuilder<'a> {
+    pub fn new(world: &WorldType<'a>) -> Self {
+        SelectionBuilder {
+            underlying: Selection::new(world),
+        }
+    }
+
+    pub fn build(self) -> Selection<'a> {
+        self.underlying
+    }
+
+
+    pub fn with_chunk_position(mut self, chunk_pos: ChunkPosition) -> Self {
+        self.underlying.cached_chunks.insert(chunk_pos, None);
+        self
+    }
+
+    pub fn with_chunk(mut self, chunk: ChunkType) -> Self {
+        let pos = chunk.lock().unwrap().position().clone();
+        self.underlying.cached_chunks.insert(pos, Some(chunk));
+        self
+    }
+
+    pub fn all_dimension_chunks(mut self, dimension: &str) -> Self {
+        {
+            let world = self.underlying.world_ref.lock().unwrap();
+            let dim = world.dimension(dimension);
+            if dim.is_none() { panic!("Invalid dimension"); }
+            for chunk_pos in dim.unwrap().chunk_positions() {
+                self.underlying.cached_chunks.insert(ChunkPosition::new(chunk_pos.0, chunk_pos.1, dimension.clone()), None);
+            }
+        }
+        self
+    }
+
+    pub fn all_chunks(mut self) -> Self {
+        {
+            let dims: Vec<String> = {
+                let world = self.underlying.world_ref.lock().unwrap();
+                world.dimensions().keys().cloned().collect()
+            };
+
+            for dim in dims {
+                self = self.all_dimension_chunks(&dim);
+            }
+        }
+        self
+    }
+}

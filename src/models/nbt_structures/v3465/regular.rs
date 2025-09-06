@@ -36,8 +36,8 @@ pub struct NBTChunk {
 pub struct NBTSection {
     #[serde(rename="Y")]
     pub y: i32,
-    pub block_states: NBTBlockStates,
-    pub biomes: NBTBiomeStates,
+    pub block_states: Option<NBTBlockStates>,
+    pub biomes: Option<NBTBiomeStates>,
 
     #[serde(flatten)]
     pub other: HashMap<String, Value>,

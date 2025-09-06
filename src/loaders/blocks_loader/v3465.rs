@@ -5,7 +5,7 @@ use crate::loaders::utils::{get_region_files_in_folder, parse_region_file, uncom
 use crate::models::nbt_structures::v3465::regular::{NBTBlockPalette, NBTChunk, NBTSection};
 use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
-use crate::models::world::block::Block;
+use crate::models::world::block::PaletteBlock;
 use crate::models::world::chunk::Chunk;
 use crate::models::world::world::WorldKind;
 use fastnbt::Value;
@@ -27,10 +27,6 @@ pub(super) struct BlockLoaderV3465 {
 }
 
 impl BlockLoaderV3465 {
-    fn palette_block_to_block(&self, nbt_block: NBTBlockPalette) -> Block {
-        Block::new(nbt_block.name.as_ref(), nbt_block.properties)
-    }
-
     unsafe fn parse_longs(&self, longs: &[u64], bits_per_entry: u32, max_entries: usize, index_replacement_map: &[usize], output_slice: &mut [usize]) {
         let entries_per_long = (u64::BITS / bits_per_entry) as usize;
         let mut current_entry_count = 0;
@@ -52,7 +48,8 @@ impl BlockLoaderV3465 {
 
     // TODO: Optimize the block palette loading
     unsafe fn parse_section_blocks(&self, section: NBTSection, block_store: &mut BlockStore, section_block_count: usize) {
-        let Some(block_palette) = section.block_states.palette else { return; };
+        let Some(block_states) = section.block_states else {return};
+        let Some(block_palette) = block_states.palette else { return; };
 
         let mut index_replacement_map = Vec::with_capacity(block_palette.len());
         let old_palette_len = block_palette.len();
@@ -60,7 +57,7 @@ impl BlockLoaderV3465 {
         let mut first_item_new_index = 0;
 
         for nbt_block in block_palette.into_iter() {
-            let new_index = block_store.add_block_to_palette(Block::new(&nbt_block.name, nbt_block.properties));
+            let new_index = block_store.add_block_to_palette(PaletteBlock::new(&nbt_block.name, nbt_block.properties));
             if first_item_new_index == 0 { first_item_new_index = new_index; }
             index_replacement_map.push(new_index);
         }
@@ -70,7 +67,7 @@ impl BlockLoaderV3465 {
         let indices = block_store.indices_slice_mut();
         let section_indices: &mut [usize] = &mut indices[start..end];
 
-        if let Some(Value::LongArray(arr)) = section.block_states.data.as_ref() {
+        if let Some(Value::LongArray(arr)) = block_states.data.as_ref() {
             let section_data_i64: &[i64] = &*arr;
             let longs: &[u64] = unsafe { std::slice::from_raw_parts(section_data_i64.as_ptr() as *const u64, section_data_i64.len(), ) };
             let bits_per_block: u32 = max(bit_length(old_palette_len as i32 - 1), 4);
@@ -81,8 +78,10 @@ impl BlockLoaderV3465 {
         }
     }
 
-    unsafe fn parse_section_biomes(&self, section: &NBTSection, biome_store: &mut BiomeStore, section_biome_count: usize) {
-        let Some(biome_palette) = section.biomes.palette.clone() else { return; };
+    unsafe fn parse_section_biomes(&self, mut section: NBTSection, biome_store: &mut BiomeStore, section_biome_count: usize) -> NBTSection {
+        let sec_biomes = section.biomes.take();
+        let Some(biome_states) = sec_biomes else { return section; };
+        let Some(biome_palette) = biome_states.palette else { return section; };
 
         let mut index_replacement_map = Vec::with_capacity(biome_palette.len());
         let old_palette_len = biome_palette.len();
@@ -100,7 +99,7 @@ impl BlockLoaderV3465 {
         let indices = biome_store.indices_slice_mut();
         let section_indices: &mut [usize] = &mut indices[start..end];
 
-        if let Some(Value::LongArray(arr)) = section.biomes.data.as_ref() {
+        if let Some(Value::LongArray(arr)) = biome_states.data.as_ref() {
             let section_data_i64: &[i64] = &*arr;
             let longs: &[u64] = unsafe { std::slice::from_raw_parts(section_data_i64.as_ptr() as *const u64, section_data_i64.len(), ) };
             let bits_per_biome: u32 = bit_length(old_palette_len as i32 - 1);
@@ -109,6 +108,8 @@ impl BlockLoaderV3465 {
         } else {
             section_indices.fill(first_item_new_index)
         }
+
+        section
     }
 
     unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, chunk_nbt: NBTChunk) {
@@ -117,8 +118,8 @@ impl BlockLoaderV3465 {
         let section_block_count = (self.version.data.section_height * self.version.data.chunk_size * self.version.data.chunk_size) as usize;
         let section_biome_count = section_block_count / BIOME_CELL_SIZE.pow(3) as usize;
 
-        for section in chunk_nbt.sections {
-            self.parse_section_biomes(&section, biome_store, section_biome_count);
+        for mut section in chunk_nbt.sections {
+            section = self.parse_section_biomes(section, biome_store, section_biome_count);
             self.parse_section_blocks(section, block_store, section_block_count);
         }
     }
@@ -181,7 +182,7 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
         regions
     }
 
-    fn parse_region(&self, region: &Region) -> (Vec<Chunk<'a>>, HashMap<i64, Vec<GenericParentStructure>>) {
+    fn parse_region(&self, region: &Region) -> (Vec<Chunk>, HashMap<i64, Vec<GenericParentStructure>>) {
         let parsed_chunks = parse_region_file(region);
 
         let mut chunks = Vec::with_capacity(parsed_chunks.len());
@@ -207,7 +208,7 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
         data: Vec<u8>,
         compression_type: u8,
         dimension: &str,
-    ) -> Option<(Chunk<'a>, Vec<GenericParentStructure>)> {
+    ) -> Option<(Chunk, Vec<GenericParentStructure>)> {
         let mut chunk_data = data;
 
         match compression_type {

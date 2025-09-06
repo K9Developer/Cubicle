@@ -3,7 +3,7 @@ use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
 use crate::models::positions::entity_position::EntityPosition;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GenericEntity {
     air_remaining: Tick,
     distance_fallen: f32,
@@ -20,21 +20,21 @@ pub enum EntityType {
     Mob
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlayerEntity { // TODO
     base: GenericEntity,
     inventory: Inventory,
     extra: Properties
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MobEntity {
     base: GenericEntity,
     id: String,
     extra: Properties
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Entity {
     Player(PlayerEntity),
     Mob(MobEntity),
@@ -131,6 +131,7 @@ impl MobEntity {
     }
 
     pub fn id(&self) -> &str { &self.id }
+    pub fn properties(&self) -> &Properties { &self.extra }
 
     pub fn set_id(&mut self, id: String) { self.id = id; }
 }

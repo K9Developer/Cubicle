@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::models::world::block::Block;
+use crate::models::world::block::PaletteBlock;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct Offset {
@@ -22,7 +22,7 @@ impl From<(i16, i16, i16)> for Offset {
 
 #[derive(Clone, Debug)]
 pub struct LocalStructure {
-    block_map: HashMap<Offset, Block>,
+    block_map: HashMap<Offset, PaletteBlock>,
 }
 
 impl LocalStructure {
@@ -33,13 +33,13 @@ impl LocalStructure {
     pub fn add<O, B>(mut self, offset: O, block: B) -> Self
     where
         O: Into<Offset>,
-        B: Into<Block>,
+        B: Into<PaletteBlock>,
     {
         self.block_map.insert(offset.into(), block.into());
         self
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (Offset, &Block)> { self.block_map.iter().map(|(k, v)| (*k, v)) }
+    pub fn iter(&self) -> impl Iterator<Item = (Offset, &PaletteBlock)> { self.block_map.iter().map(|(k, v)| (*k, v)) }
     pub fn len(&self) -> usize { self.block_map.len() }
     pub fn is_empty(&self) -> bool { self.block_map.is_empty() }
 }

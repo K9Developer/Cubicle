@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use crate::constants::versions::Version;
@@ -9,7 +10,7 @@ use crate::models::other::region::Region;
 
 pub trait EntityLoader<'a> {
     fn get_region_files(&self, world_path: PathBuf) -> Vec<Region>;
-    fn parse_region(&self, region: &Region) -> Vec<Entity>;
+    fn parse_region(&self, region: &Region) -> HashMap<(i32, i32), Vec<Entity>>;
     fn parse_entity_chunk(&self, data: Vec<u8>, compression_type: u8, dimension: &str) -> Option<Vec<Entity>>;
 }
 

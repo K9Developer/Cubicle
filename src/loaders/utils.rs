@@ -8,6 +8,7 @@ use crate::types::RegionPosition;
 
 pub struct ParsedRegionChunk {
     pub offset: usize,
+    pub header_offset: usize,
     pub raw_bytes: Vec<u8>,
     pub compression_type: u8
 }
@@ -51,7 +52,7 @@ pub fn parse_region_file(region: &Region) -> Vec<ParsedRegionChunk> {
 
     let mut loc_table = [0u8; MCA_REGION_SECTOR_SIZE];
     file.read_exact(&mut loc_table).expect("Failed to read locations table");
-    let mut offsets = Vec::<usize>::with_capacity(MCA_REGION_SECTOR_SIZE/MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE);
+    let mut offsets = Vec::<(usize, usize)>::with_capacity(MCA_REGION_SECTOR_SIZE/MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE);
 
     for i in 0..(MCA_REGION_SECTOR_SIZE/MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE) {
         let b0 = loc_table[i * 4];
@@ -62,11 +63,11 @@ pub fn parse_region_file(region: &Region) -> Vec<ParsedRegionChunk> {
         let entry = u32::from_be_bytes([b0, b1, b2, b3]);
         let sector_offset = (entry >> 8) as usize; // top 24 bits
         let sector_count  = (entry & 0xFF) as u8;
-        if sector_offset != 0 && sector_count != 0 { offsets.push(sector_offset * MCA_REGION_SECTOR_SIZE); }
+        if sector_offset != 0 && sector_count != 0 { offsets.push((sector_offset * MCA_REGION_SECTOR_SIZE, i*4)); }
     }
 
     let mut parsed_chunks = Vec::<ParsedRegionChunk>::new();
-    for offset in offsets {
+    for (offset, loc_offset) in offsets {
         file.seek(SeekFrom::Start(offset as u64)).expect("Failed to seek");
 
         let mut raw_chunk_length = [0u8; 4];
@@ -81,6 +82,7 @@ pub fn parse_region_file(region: &Region) -> Vec<ParsedRegionChunk> {
         file.read_exact(&mut raw_chunk_data).expect("Failed to read chunk data");
         parsed_chunks.push(ParsedRegionChunk {
             offset,
+            header_offset: loc_offset,
             raw_bytes: raw_chunk_data,
             compression_type
         })

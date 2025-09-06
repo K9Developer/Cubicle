@@ -1,17 +1,16 @@
 use cubicle::constants::versions::{VersionManager};
-use cubicle::models::world::world::{World, WorldKind};
+use cubicle::models::world::world::{WithLock, World, WorldKind};
 use std::time::Instant;
 use cubicle::models::filter::comparable_value::ComparableValue;
 use cubicle::models::filter::filter::Filter;
 use cubicle::models::filter::filter_keys::FilterKey;
 use cubicle::models::filter::filter_operations::FilterOperation;
-use cubicle::models::filter::local_structure::{LocalStructure, Offset};
+use cubicle::models::other::region::{Region, RegionType};
 use cubicle::models::positions::chunk_position::ChunkPosition;
-use cubicle::models::world::block::Block;
-use cubicle::models::world::selection::Selection;
-use cubicle::traits::access::prelude::BlockAccess;
-use cubicle::traits::access::prelude::{BlockReader};
+use cubicle::models::world::selection::{Selection, SelectionBuilder};
+use cubicle::traits::access::prelude::{BlockReader, EntityReader};
 use cubicle::types::{RegionPosition};
+use cubicle::utils::position_utils::chunk_offset_to_position;
 // TODO: Finish all todos before doing more versions!
 /*
 TODO: Have a WorldContentManager that will be in charge of the API of the content of the world. like below:
@@ -38,105 +37,54 @@ TODO: Have traits like in the link for world, dimension, chunk and they each pro
 
 TODO: Make sure biomes are exact - look at edge of biome and check
 
-TODO: Too many version clones, not sure how to handle but it probably shouldnt be looking like this
-
-have:
-FullBlock which will have more info like biome, position, etc.
-world.get_biome_at_position() -> &str
-world.get_block_at_position() -> FullBlock
-FullBlock will have a reference to world and then doing FullBlock.set_id("minecraft:stone") will actually replace the block
 */
 
 /*
 Up next:
-    * Filters - We'll have a Filter that has key, comparer, value. for example:
-     let f = Filter::new();
-     f.add(FilterKey::x_pos, FilterComp::BiggerThan, {3})
-     f.add(FilterKey::position, FilterComp::Within, {pos1, pos2})
-    * Access Traits
     * The Managers (EntityManager, BlockManager, etc.)
     * The heightmaps
 */
 
 fn main() {
-    // let v = VersionManager::get("1.20.1", WorldType::SINGLEPLAYER);
-    //
-    // w.register_regions();
-    // let start = Instant::now();
-    // w.load_region(Position::new("overworld", -1f32, 0f32, -1f32));
-    // let end = start.elapsed();
-    // println!("Time elapsed in load_region() is: {:?}", end);
-    //
-    // let b = w.get_block_at_position(Position::new("overworld", -504f32, 62f32, -504f32));
-    // println!("Block at position: {:?}", b);
-    // // let biome = w.dimension("overworld").chunk((-32, -32)).unwrap().biome_store().get_biome_at_block_position(
-    // //     Position::new("overworld", 0., 0., 0.)
-    // // );
-    // // println!("Biome: {:?}", biome);
-    // //
-    // // let dim = w.dimension("overworld");
-    // // let all = dim.structure_store().structures();
-    // // for s in all {
-    // //     let b = s.chunk_position().to_block_coords(v.data.chunk_size);
-    // //     println!("Found a structure with ID of {:?} at {} {} {}", s.id(), b.x(), b.y(), b.z());
-    // // }
-    // //
-    // // let es = w.get_entities_of_id("minecraft:cow");
-    // // for ent in es {
-    // //     println!("A cow is at: {:?} {:?} {:?}", ent.base().position().x(), ent.base().position().y(), ent.base().position().z());
-    // // }
-    // let chunk = w.dimension("overworld").chunk((-32, -32)).unwrap().biome_store();
-    // println!("Biome (should be birch): {:?}", chunk.get_biome_at_block_position(Position::new("overworld", 9., 3., 9.)));
-    // println!("Biome (should be lush): {:?}", chunk.get_biome_at_block_position(Position::new("overworld", 9., 2., 9.)));
+    let world_path = "C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test";
+    let version = VersionManager::get("1.20.1", WorldKind::SINGLEPLAYER);
+    let world = World::new(world_path.parse().unwrap(), version);
 
-    // TODO: For filters add a Filter::LocalStructure which checks blocks around so can do like commented code below
-    // TODO: Filters will run in a certain bounding box, if ran on world it will be everything, if on chunk, just the chunk, then can build a list of chunks to check on too
-    let v = VersionManager::get("1.20.1", WorldKind::SINGLEPLAYER);
-    let world = World::new("C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test".parse().unwrap(), v);
-    world.lock().unwrap().register_regions();
+    let mut chunks_loaded = 0;
+    world.with(|w| {
+        w.register_regions();
+        w.load_region(RegionPosition::new(0, 0, "overworld"));
+        chunks_loaded = w.dimension("overworld").unwrap().chunk_count();
+    });
 
-    let mut s = Instant::now();
-    world.lock().unwrap().load_region(RegionPosition::new(0, 0, "overworld"));
-    let mut e = s.elapsed();
-    println!("Time elapsed in load_region() is: {:?}", e);
-    println!("Loaded {} chunks!", world.lock().unwrap().dimension("overworld").unwrap().len());
+    println!("Loaded {} chunks!", chunks_loaded);
 
     let block_filter = Filter::And(vec![
         Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:stone".into())),
         Filter::Compare(FilterKey::X_POSITION.into(), FilterOperation::Equals, 3.into()),
-        Filter::Compare(FilterKey::Z_POSITION.into(), FilterOperation::Equals, 3.into()),
+        Filter::Compare(FilterKey::Z_POSITION.into(), FilterOperation::Equals, 3.into())
     ]);
 
-    let mut selection = Selection::new(&world)
-        .selection_add_chunk_position(ChunkPosition::new(0,0,"overworld"));
-    println!("Created section");
-    s = Instant::now();
-    let bs = selection.find_blocks(block_filter, 0);
-    e = s.elapsed();
-    println!("Found {} stone blocks in the column in {:?}:", bs.len(), e);
-    for b in bs {
-        println!("\t{} at {}", b.id(), b.position());
-    }
+    let entity_filter = Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:item".into()));
 
+    let mut selection = SelectionBuilder::new(&world)
+        .with_chunk_position(ChunkPosition::new(0,0,"overworld"))
+        .build();
 
-    /*
+    // println!("Blocks in column:");
+    // selection.find_blocks(block_filter, |mut block| {
+    //     println!("\t{} at {}", block.id(), block.position());
+    //     true
+    // });
 
+    selection.find_entities(
+        entity_filter,
+        |e| {
+            println!("{:?}", e);
+            true
+        }
+    )
+    // TODO: A chunk can return FullEntity which has world_ref, then we can change and commit. The dim will have an entity store and the chunk will store indices.
+    // TODO: Seems like it searches blocks from y>0
 
-
-    let block_filter = Filter::And(vec![
-        Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:stone".into())),
-        Filter::LocalStructure(ls)
-    ]);
-
-    let block = Selection::new(&world)
-                        .add(chunk1)
-                        .add(chunk2)
-                        .add(chunk3)
-                        .find_block(block_filter)
-
-    let block = Selection::new(&world).all_chunks().find_block(block_filter)
-
-    println!("{:?}", block_filter);
-     */
 }
-// filter 28, filter keys

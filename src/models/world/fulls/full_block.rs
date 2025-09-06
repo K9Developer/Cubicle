@@ -3,8 +3,8 @@ use std::fmt;
 use fastnbt::Value;
 use crate::models::other::properties::Properties;
 use crate::models::positions::whole_position::Position;
-use crate::models::world::block::Block;
-use crate::types::WorldType;
+use crate::models::world::block::PaletteBlock;
+use crate::types::{ChunkType, WorldType};
 use crate::utils::position_utils::block_position_to_chunk_pos_and_block_index;
 
 pub struct FullBlock<'a> {
@@ -17,7 +17,7 @@ pub struct FullBlock<'a> {
 }
 
 impl<'a> FullBlock<'a> {
-    pub fn new(world_ref: WorldType<'a>) -> Self {
+    pub fn new(world_ref: &WorldType<'a>) -> Self {
         Self {
             name: "minecraft:air".to_string(),
             extra: Properties::new(HashMap::new()),
@@ -27,12 +27,12 @@ impl<'a> FullBlock<'a> {
         }
     }
 
-    pub fn new_with_data(world_ref: WorldType<'a>, block: Block, position: Position) -> Self{
+    pub fn new_with_data(world_ref: &WorldType<'a>, block: PaletteBlock, position: Position) -> Self{
         Self {
             name: block.name().to_string(),
             extra: block.properties().clone(), // TODO: Dont clone, we move the block here...
             position,
-            world_ref,
+            world_ref: world_ref.clone(),
             null_flag: false,
         }
     }
@@ -42,8 +42,20 @@ impl<'a> FullBlock<'a> {
     pub fn key(&self) -> &str {self.name.split(':').nth(2).unwrap_or("")}
     pub fn position(&self) -> &Position { &self.position }
     pub fn properties(&self) -> &Properties { &self.extra }
-    pub fn palette_block(&self) -> Block {
-        Block::new(&self.name, Some(self.extra.properties().clone()))
+    pub fn palette_block(&self) -> PaletteBlock {
+        PaletteBlock::new(&self.name, Some(self.extra.properties().clone()))
+    }
+    pub fn parent_chunk(&self) -> Option<(ChunkType, usize)> {
+        let mut world = self.world_ref.lock().unwrap();
+        let ver_data = world.version();
+        let (chunk_pos, rel_index) = block_position_to_chunk_pos_and_block_index(&self.position, ver_data.data.chunk_size, ver_data.data.lowest_y);
+        if let Some(dim) = world.dimension(chunk_pos.dimension()) {
+            if let Some(ch) = dim.chunk(chunk_pos.position()) {
+                return Some((ch, rel_index))
+            }
+            return None
+        }
+        None
     }
 
 
@@ -95,7 +107,7 @@ impl<'a> fmt::Display for FullBlock<'a> {
 impl<'a> BlockBuilder<'a> {
     pub fn new(world_ref: WorldType<'a>) -> Self {
         BlockBuilder {
-            underlying: FullBlock::new(world_ref),
+            underlying: FullBlock::new(&world_ref),
         }
     }
 

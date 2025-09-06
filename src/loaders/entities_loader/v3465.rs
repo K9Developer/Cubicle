@@ -14,6 +14,7 @@ use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
 use crate::models::positions::entity_position::EntityPosition;
 use crate::models::world::world::WorldKind;
+use crate::utils::position_utils::chunk_offset_to_position;
 // TODO: Support other dimensions (custom paths)
 
 pub(super) struct EntityLoaderV3465 {
@@ -60,13 +61,14 @@ impl<'a> EntityLoader<'a> for EntityLoaderV3465 {
         regions
     }
 
-    fn parse_region(&self, region: &Region) -> Vec<Entity> {
+    fn parse_region(&self, region: &Region) -> HashMap<(i32, i32), Vec<Entity>> {
         let parsed_chunks = parse_region_file(region);
-        let mut entities = Vec::with_capacity(parsed_chunks.len());
+        let mut entities = HashMap::new();
         for parsed_chunk in parsed_chunks {
-            let chunk = self.parse_entity_chunk(parsed_chunk.raw_bytes, parsed_chunk.compression_type, region.position.dimension());
-            if chunk.is_some() {
-                entities.extend(chunk.unwrap());
+            let chunk_entities = self.parse_entity_chunk(parsed_chunk.raw_bytes, parsed_chunk.compression_type, region.position.dimension());
+            if chunk_entities.is_some() {
+                let chunk_pos = chunk_offset_to_position(parsed_chunk.header_offset, region);
+                entities.insert(chunk_pos, chunk_entities.unwrap());
             }
         }
         entities
