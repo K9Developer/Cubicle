@@ -39,11 +39,10 @@ TODO: Have traits like in the link for world, dimension, chunk and they each pro
 TODO: Make sure biomes are exact - look at edge of biome and check
 
 */
-
 /*
 Up next:
-    * The Managers (EntityManager, BlockManager, etc.)
-    * The heightmaps
+    * Parser optimizations - noticed creating chunk::new is the slowest operation by more than 3 times than everything together. Probably the stores allocating so much memory, figure out how to store more compact?
+    * Biome testing
 */
 
 fn main() {
@@ -54,10 +53,9 @@ fn main() {
     let mut chunks_loaded = 0;
     world.with(|w| {
         w.register_regions();
-        let s = Instant::now();
+
         w.load_region(RegionPosition::new(0, 0, "overworld"));
-        let e = s.elapsed();
-        println!("Loaded region in {:?}", e);
+
         chunks_loaded = w.dimension("overworld").unwrap().chunk_count();
     });
 

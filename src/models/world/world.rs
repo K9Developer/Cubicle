@@ -106,7 +106,6 @@ impl<'a> World<'a> {
                     }
                 }
             }
-            // The mutable borrow ends here at the end of each iteration
         }
     }
 }

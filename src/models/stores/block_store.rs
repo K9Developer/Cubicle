@@ -5,9 +5,6 @@ use crate::models::positions::whole_position::Position;
 use crate::models::world::block::PaletteBlock;
 use crate::traits::misc::store::StoreLike;
 
-#[derive(Debug)]
-pub struct QuickLookupData {}
-
 // NOTE: index 0 of palette is NULL BLOCK
 
 // z -> x -> y
@@ -16,12 +13,11 @@ pub struct BlockStore {
     palette: FastSet<PaletteBlock>,
     indices: Vec<usize>,
     version: Arc<Version>,
-    qld: QuickLookupData,
 }
 
 impl BlockStore {
     pub fn new(version: Arc<Version>) -> BlockStore {
-        let height = (version.data.highest_y - version.data.lowest_y).abs() as i32;
+        let height = (version.data.highest_y - version.data.lowest_y).abs();
         let total_blocks = (version.data.chunk_size * version.data.chunk_size * height) as usize;
 
         let mut p = FastSet::new();
@@ -30,7 +26,6 @@ impl BlockStore {
         BlockStore {
             palette: p,
             indices: vec![0usize; total_blocks],
-            qld: QuickLookupData {},
             version,
         }
     }

@@ -12,6 +12,7 @@ use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Instant;
 use crate::models::other::properties::Properties;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::stores::biome_store::BiomeStore;
@@ -136,7 +137,7 @@ impl BlockLoaderV3465 {
         }
     }
 
-    fn populate_chunk_with_structures(&self, chunk_obj: &mut Chunk, chunk_nbt: &NBTChunk) -> Vec<GenericParentStructure> {
+    fn populate_chunk_with_structures(&self, chunk_obj: &mut Chunk, mut chunk_nbt: &mut NBTChunk) -> Vec<GenericParentStructure> {
         let mut new_structures = Vec::<GenericParentStructure>::new();
 
         // refs
@@ -150,15 +151,15 @@ impl BlockLoaderV3465 {
         }
 
         // actual
-        for (_, structure) in chunk_nbt.structures.starts.iter() {
+        for (_, structure) in chunk_nbt.structures.starts.take().unwrap() {
             let mut children = Vec::<GenericChildStructure>::new();
 
-            if let Some(nbt_children) = &structure.children {
+            if let Some(nbt_children) = structure.children {
                 for child in nbt_children {
                     children.push(GenericChildStructure::new(
                         &*child.id,
-                        BoundingBox::from_BB(child.bounding_box.clone(), chunk_obj.position().dimension()),
-                        Properties::new(child.others.clone()) // TODO: I really dont like this - its a structure too so very slow. The thing is chunk_nbt is owned by the other func
+                        BoundingBox::from_BB(child.bounding_box, chunk_obj.position().dimension()),
+                        Properties::new(child.others) // TODO: I really dont like this - its a structure too so very slow. The thing is chunk_nbt is owned by the other func
                     ));
                 }
             }
@@ -168,7 +169,7 @@ impl BlockLoaderV3465 {
                 chunk_obj.position().clone(),
                 &*structure.id,
                 children,
-                Properties::new(structure.others.clone())
+                Properties::new(structure.others)
             );
 
             new_structures.push(parent);
@@ -223,14 +224,19 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
     ) -> Option<(Chunk, Vec<GenericParentStructure>)> {
         let mut chunk_data = data;
 
+
+        // TODO: have handle_chunk_compression so no dups in entity loading too
         match compression_type {
             ZLIB_COMPRESSION_TYPE => {
-                chunk_data = uncompress_zlib(chunk_data);
+                match uncompress_zlib(chunk_data) {
+                    Some(c) => chunk_data = c,
+                    None => { return None; }
+                }
             }
-            _ => return None,
+            _ => { todo!() }
         }
 
-        let chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");
+        let mut chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");
 
         let mut chunk = Chunk::new(
             self.version.clone(),
@@ -245,7 +251,7 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
             chunk_nbt.status.clone(),
         );
 
-        let structures = self.populate_chunk_with_structures(&mut chunk, &chunk_nbt);
+        let structures = self.populate_chunk_with_structures(&mut chunk, &mut chunk_nbt);
         unsafe { self.populate_chunk_with_blocks(&mut chunk, chunk_nbt); }
         Some((chunk, structures))
     }

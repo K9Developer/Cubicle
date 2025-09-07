@@ -78,8 +78,13 @@ impl<'a> EntityLoader<'a> for EntityLoaderV3465 {
         let mut chunk_data = data;
 
         match compression_type {
-            ZLIB_COMPRESSION_TYPE => { chunk_data = uncompress_zlib(chunk_data) }
-            _ => { return None }
+            ZLIB_COMPRESSION_TYPE => {
+                match uncompress_zlib(chunk_data) {
+                    Some(c) => chunk_data = c,
+                    None => { return None; }
+                }
+            }
+            _ => { todo!() }
         }
 
         let chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");

@@ -19,10 +19,10 @@ pub struct Chunk {
 
     block_store: BlockStore,
     biome_store: BiomeStore,
+    heightmap_store: HeightmapStore,
 
     entity_keys: Vec<EntityStoreKey>,
     structures: Vec<StructureStoreReference>,
-    heightmap_store: HeightmapStore,
 
     version: Arc<Version>,
 }
@@ -35,7 +35,7 @@ impl Chunk {
         inhabited_time: Tick,
         last_update: Tick,
         status: String,
-    ) -> Chunk {
+    ) -> Self {
         Chunk {
 
             position,

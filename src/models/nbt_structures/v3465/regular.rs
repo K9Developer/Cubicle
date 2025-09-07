@@ -3,7 +3,7 @@ use fastnbt::Value;
 use serde::{Deserialize, Serialize};
 use serde;
 
-// TODO: use &'a str instead of String
+// TODO: Remove as many properties as possible here so no parsing too much
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NBTChunk {
@@ -94,7 +94,7 @@ pub struct NBTTileTick {
 pub struct NBTStructureList {
     #[serde(rename="References")]
     pub references: HashMap<String, Value>,
-    pub starts: HashMap<String, NBTStructure>
+    pub starts: Option<HashMap<String, NBTStructure>>
 }
 
 #[derive(Serialize, Deserialize, Debug)]

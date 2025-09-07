@@ -91,11 +91,24 @@ pub fn parse_region_file(region: &Region) -> Vec<ParsedRegionChunk> {
     parsed_chunks
 }
 
-pub fn uncompress_zlib(data: Vec<u8>) -> Vec<u8> {
+pub fn uncompress_zlib(data: Vec<u8>) -> Option<Vec<u8>> {
+    fn guess_output_capacity(compressed_len: usize) -> usize {
+        const MIN_START: usize = 256 * 1024;
+        const FACTOR_NUM: usize = 4;
+        const FACTOR_DEN: usize = 1;
+        const MAX_START: usize = 32 * 1024 * 1024;
+        let guess = compressed_len.saturating_mul(FACTOR_NUM) / FACTOR_DEN;
+        guess.clamp(MIN_START, MAX_START)
+    }
+
     let mut decoder = ZlibDecoder::new(&data[..]);
-    let mut decompressed = Vec::new();
-    decoder.read_to_end(&mut decompressed).unwrap();
-    decompressed
+    let mut decompressed = Vec::with_capacity(guess_output_capacity(data.len()));
+    match decoder.read_to_end(&mut decompressed) {
+        Ok(_) => { decompressed.shrink_to_fit() },
+        Err(_) => { return None }
+    }
+
+    Some(decompressed)
 }
 
 #[inline(always)]
