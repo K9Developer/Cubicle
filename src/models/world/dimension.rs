@@ -5,6 +5,7 @@ use crate::models::stores::entity_store::{EntityStore, EntityStoreKey};
 use crate::models::world::chunk::Chunk;
 use crate::models::stores::structure_store::StructureStore;
 use crate::models::world::selection::{Selection, SelectionBuilder};
+use crate::models::world::world::World;
 use crate::types::{ChunkType, WorldType};
 
 pub struct Dimension {
@@ -49,8 +50,8 @@ impl Dimension {
         for chunk in chunks { self.set_chunk(chunk); }
     }
 
-    pub fn select<'a>(&self, world: &WorldType<'a>) -> Selection<'a> {
-        SelectionBuilder::new(world).all_dimension_chunks(&self.dimension_id).build()
+    pub fn select<'r, 'a>(&self, world: &'r mut World<'a>) -> Selection<'r, 'a> {
+        SelectionBuilder::new(world, &self.version).all_dimension_chunks(&self.dimension_id).build()
     }
 
 }

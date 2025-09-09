@@ -53,8 +53,8 @@ impl Position {
         let chunk_size = version.data.chunk_size;
         let chunk_biome_size = chunk_size / BIOME_CELL_SIZE;
         if self.x() > chunk_size || self.z() > chunk_size { panic!("Chunk size out of range"); }
-        let height = (version.data.lowest_y.abs() / BIOME_CELL_SIZE) + self.y();
-        (height * chunk_biome_size * chunk_biome_size + self.x() * chunk_biome_size + self.z()) as usize
+        let height = (version.data.lowest_y.abs() / BIOME_CELL_SIZE) + self.y() / BIOME_CELL_SIZE;
+        (height * chunk_biome_size * chunk_biome_size + self.z() * chunk_biome_size + self.x()) as usize
     }
 
     pub fn to_block_coords(&self, chunk_size: i32) -> Position { // TODO: Add height maps so i can get current ground Y

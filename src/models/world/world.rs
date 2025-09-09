@@ -57,7 +57,9 @@ impl<'a> World<'a> {
     pub fn loader(&self) -> &Loader<'a> { &self.loader }
     pub fn version(&self) -> Arc<Version> { self.version.clone() }
     pub fn get(&self) -> WorldType<'a> { self.self_ref.clone().unwrap() }
-    pub fn select(&self) -> Selection<'a> { SelectionBuilder::new_owned(self.get()).build() }
+    pub fn select<'r>(&'r mut self) -> Selection<'r, 'a> {
+        SelectionBuilder::new_owned(self, self.version.clone()).all_chunks().build()
+    }
 
     pub fn set_seed(&mut self, seed: u64) { self.seed = seed; }
     pub fn set_dimension(&mut self, name: String, dimension: Dimension) { self.dimensions.insert(name, dimension); }
@@ -90,14 +92,14 @@ impl<'a> World<'a> {
         for region in regions {
             match region.region_type {
                 RegionType::Block => {
-                    println!("Loading block region");
+                    // println!("Loading block region");
                     let (chunks, new_structures) = self.loader.block_loader().parse_region(&region);
                     let dim = self.dimensions.get_mut(region.position.dimension()).unwrap();
                     dim.set_chunks(chunks);
                     dim.structure_store_mut().add_structures(new_structures);
                 }
                 RegionType::Entity => {
-                    println!("Loading entity region");
+                    // println!("Loading entity region");
                     let chunks_entities = self.loader().entity_loader().parse_region(&region);
                     let dim = self.dimensions.get_mut(region.position.dimension()).unwrap();
                     for (chunk_pos, chunk_entities) in chunks_entities {
@@ -132,6 +134,7 @@ impl<T> WithLock<T> for Arc<Mutex<T>> {
         let mut g = self.lock().unwrap();
         f(&mut *g)
     }
+
     fn with_read<R>(&self, f: impl FnOnce(&T) -> R) -> R {
         let g = self.lock().unwrap();
         f(&*g)

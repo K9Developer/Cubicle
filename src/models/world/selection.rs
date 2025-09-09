@@ -1,6 +1,6 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, MutexGuard};
 use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
 use crate::models::filter::filter::Filter;
@@ -8,24 +8,29 @@ use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::positions::whole_position::Position;
 use crate::models::world::fulls::full_block::FullBlock;
 use crate::models::world::fulls::full_entity::FullEntity;
+use crate::models::world::world::World;
 use crate::traits::access::prelude::{BlockReader, BlockWriter, EntityReader, EntityWriter};
 use crate::types::{ChunkType, WorldType};
-use crate::utils::position_utils::{block_index_to_block_position, block_position_to_chunk_pos_and_block_index, world_position_to_chunk_position};
+use crate::utils::position_utils::{block_index_to_block_position, block_position_to_chunk_pos_and_block_index, chunk_position_to_world_position, world_position_to_chunk_position};
 
-pub struct Selection<'a> {
+pub struct Selection<'r, 'a> {
     cached_chunks: HashMap<ChunkPosition, Option<ChunkType>>,
-    world_ref: WorldType<'a>,
+    world_ref: &'r mut World<'a>,
     version: Arc<Version>,
 }
 
 // TODO: This takes space and speed and it should just be an abstraction, i dont really like this... Figure out how to make this cheaper
-impl<'a> Selection<'a> {
-    pub fn new(world: WorldType<'a>) -> Self {
-        let v = {
-            let w = world.lock().unwrap();
-            w.version()
-        };
-        Self {cached_chunks: HashMap::new(), world_ref: world, version: v}
+impl<'r, 'a> Selection<'r, 'a> {
+    pub fn new(world: &'r mut World<'a>, version: Arc<Version>) -> Self {
+        Self {cached_chunks: HashMap::new(), world_ref: world, version}
+    }
+
+    pub fn chunk(&mut self, chunk_position: ChunkPosition) -> Option<ChunkType> {
+        self.lazy_get_chunk(chunk_position)
+    }
+
+    pub fn chunk_count(&self) -> usize {
+        self.cached_chunks.len()
     }
 
     fn lazy_get_chunk(&mut self, chunk_pos: ChunkPosition) -> Option<ChunkType> {
@@ -34,8 +39,7 @@ impl<'a> Selection<'a> {
                 let chunk_pos = occ.key().clone();
                 let slot = occ.get_mut();
                 if slot.is_none() {
-                    let mut world = self.world_ref.lock().unwrap();
-                    let c = world.dimension_mut(chunk_pos.dimension()).unwrap().chunk_mut(chunk_pos.position());
+                    let c = self.world_ref.dimension_mut(chunk_pos.dimension()).unwrap().chunk_mut(chunk_pos.position());
                     *slot = c;
                 }
                 slot.clone()
@@ -45,7 +49,7 @@ impl<'a> Selection<'a> {
     }
 }
 
-impl<'a> BlockReader<'a> for Selection<'a> {
+impl<'r, 'a> BlockReader<'a> for Selection<'r, 'a> {
 
     // callback can return bool. true means continue, false means stop
     fn blocks<F>(&mut self, mut callback: F) where F: FnMut(FullBlock<'a>) -> bool,
@@ -61,18 +65,24 @@ impl<'a> BlockReader<'a> for Selection<'a> {
             };
             let actual_chunk = chunk.lock().unwrap();
 
-            let mut block_position = block_index_to_block_position(actual_chunk.position(), 0, chunk_size, min_y);
-            for b in actual_chunk.block_store().blocks() {
-                if !callback(FullBlock::new_with_data(&self.world_ref, b, block_position.clone())) { return; };
+            let mut relative_pos = (0, min_y, 0);
+            let chunk_position = actual_chunk.position();
+            let world_chunk_position = chunk_position_to_world_position(chunk_position.position(), chunk_size);
 
-                // position updates, maybe faster than re-calculating, havent tested
-                block_position.set_x(block_position.x() + 1);
-                if block_position.x() == chunk_size {
-                    block_position.set_x(0);
-                    block_position.set_z(block_position.z() + 1);
-                    if block_position.z() == chunk_size {
-                        block_position.set_z(0);
-                        block_position.set_y(block_position.y() + 1);
+            for b in actual_chunk.block_store().blocks() {
+                if !callback(FullBlock::new_with_data(
+                    &self.world_ref.get(),
+                    b,
+                    Position::new(chunk_position.dimension(), world_chunk_position.0 + relative_pos.0, relative_pos.1, world_chunk_position.1 + relative_pos.2)
+                )) { return; };
+
+                relative_pos.0 = relative_pos.0 + 1;
+                if relative_pos.0 % chunk_size == 0 {
+                    relative_pos.0 = 0;
+                    relative_pos.2 = relative_pos.2 + 1;
+                    if relative_pos.2 % chunk_size == 0 {
+                        relative_pos.2 = 0;
+                        relative_pos.1 += 1;
                     }
                 }
             }
@@ -97,7 +107,7 @@ impl<'a> BlockReader<'a> for Selection<'a> {
                 let lch = ch.lock().unwrap();
                 if let Some(local_block) = lch.block_store().get_block_at_index(relative_index) {
                     let block_position = block_index_to_block_position(lch.position(), relative_index, chunk_size, lowest_y);
-                    return Some(FullBlock::new_with_data(&self.world_ref, local_block, block_position));
+                    return Some(FullBlock::new_with_data(&self.world_ref.get(), local_block, block_position));
                 }
                 None
             }
@@ -116,7 +126,7 @@ impl<'a> BlockReader<'a> for Selection<'a> {
     }
 }
 
-impl EntityReader for Selection<'_> {
+impl<'r, 'a> EntityReader for Selection<'r, 'a> {
     fn entities<F>(&mut self, mut callback: F) where F: FnMut(FullEntity) -> bool
     {
         let chunk_poses = self.cached_chunks.keys().cloned().collect::<Vec<_>>();
@@ -130,7 +140,7 @@ impl EntityReader for Selection<'_> {
             for entity_key in actual_chunk.entity_keys() {
                 if !callback(
                     FullEntity::new(
-                        &self.world_ref,
+                        &self.world_ref.get(),
                         entity_key.clone(),
                         dim_id.as_str(),
                     )
@@ -165,11 +175,10 @@ impl EntityReader for Selection<'_> {
     }
 }
 
-impl EntityWriter for Selection<'_> {
+impl<'r, 'a> EntityWriter for Selection<'r, 'a> {
     fn set_entity_at_position(&mut self, entity: Entity) -> bool {
-        let mut world = self.world_ref.lock().unwrap();
         let dim_id = entity.base().position().dimension();
-        match world.dimension_mut(dim_id) {
+        match self.world_ref.dimension_mut(dim_id) {
             Some(dimension) => {
                 let entity_pos = entity.base().position();
                 let chunk_pos = world_position_to_chunk_position(entity_pos.x(), entity_pos.z(), self.version.data.chunk_size);
@@ -188,7 +197,7 @@ impl EntityWriter for Selection<'_> {
     }
 }
 
-impl BlockWriter for Selection<'_> {
+impl<'r, 'a> BlockWriter for Selection<'r, 'a> {
     fn set_block_at_position(&mut self, block: FullBlock) -> bool {
         if let Some((parent, rel_index)) = block.parent_chunk() {
             let mut ch = parent.lock().unwrap();
@@ -198,24 +207,24 @@ impl BlockWriter for Selection<'_> {
     }
 }
 
-pub struct SelectionBuilder<'a> {
-    underlying: Selection<'a>,
+pub struct SelectionBuilder<'a, 'r> {
+    underlying: Selection<'r, 'a>,
 }
 
-impl<'a> SelectionBuilder<'a> {
-    pub fn new(world: &WorldType<'a>) -> Self {
+impl<'a, 'r> SelectionBuilder<'a, 'r> {
+    pub fn new(world: &'r mut World<'a>, version: &Arc<Version>) -> Self {
         SelectionBuilder {
-            underlying: Selection::new(world.clone()),
+            underlying: Selection::new(world, version.clone()),
         }
     }
 
-    pub fn new_owned(world: WorldType<'a>) -> Self {
+    pub fn new_owned(world: &'r mut World<'a>, version: Arc<Version>) -> Self {
         SelectionBuilder {
-            underlying: Selection::new(world),
+            underlying: Selection::new(world, version),
         }
     }
 
-    pub fn build(self) -> Selection<'a> {
+    pub fn build(self) -> Selection<'r, 'a> {
         self.underlying
     }
 
@@ -238,8 +247,7 @@ impl<'a> SelectionBuilder<'a> {
 
     pub fn all_dimension_chunks(mut self, dimension: &str) -> Self {
         {
-            let world = self.underlying.world_ref.lock().unwrap();
-            let dim = world.dimension(dimension);
+            let dim = self.underlying.world_ref.dimension(dimension);
             if dim.is_none() { panic!("Invalid dimension"); }
             for chunk_pos in dim.unwrap().chunk_positions() {
                 self.underlying.cached_chunks.insert(ChunkPosition::new(chunk_pos.0, chunk_pos.1, dimension.clone()), None);
@@ -250,10 +258,7 @@ impl<'a> SelectionBuilder<'a> {
 
     pub fn all_chunks(mut self) -> Self {
         {
-            let dims: Vec<String> = {
-                let world = self.underlying.world_ref.lock().unwrap();
-                world.dimensions().keys().cloned().collect()
-            };
+            let dims: Vec<String> = self.underlying.world_ref.dimensions().keys().cloned().collect();
 
             for dim in dims {
                 self = self.all_dimension_chunks(&dim);

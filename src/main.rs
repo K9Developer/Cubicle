@@ -11,7 +11,7 @@ use cubicle::models::positions::whole_position::Position;
 use cubicle::models::world::selection::{Selection, SelectionBuilder};
 use cubicle::traits::access::prelude::{BlockReader, EntityReader};
 use cubicle::types::{HeightmapKind, RegionPosition, WorldKind};
-use cubicle::utils::position_utils::chunk_offset_to_position;
+use cubicle::utils::position_utils::{chunk_offset_to_position, chunk_position_to_world_position, relative_position_to_world_position};
 // TODO: Finish all todos before doing more versions!
 /*
 TODO: Have a WorldContentManager that will be in charge of the API of the content of the world. like below:
@@ -38,11 +38,11 @@ TODO: Have traits like in the link for world, dimension, chunk and they each pro
 
 TODO: Make sure biomes are exact - look at edge of biome and check
 
+TODO: Parser optimizations - noticed creating chunk::new is the slowest operation by more than 3 times than everything together. Probably the stores allocating so much memory, figure out how to store more compact?
+
 */
 /*
-Up next:
-    * Parser optimizations - noticed creating chunk::new is the slowest operation by more than 3 times than everything together. Probably the stores allocating so much memory, figure out how to store more compact?
-    * Biome testing
+
 */
 
 fn main() {
@@ -54,48 +54,24 @@ fn main() {
     world.with(|w| {
         w.register_regions();
 
-        w.load_region(RegionPosition::new(0, 0, "overworld"));
+        w.load_region(RegionPosition::new(0, -1, "overworld"));
 
         chunks_loaded = w.dimension("overworld").unwrap().chunk_count();
     });
 
-    println!("Loaded {} chunks!", chunks_loaded);
 
-    world.with(|w| {
-        let dim = w.dimension("overworld").unwrap();
-        let chu = dim.chunk((0,0)).unwrap();
-        let chunk = chu.lock().unwrap();
-        println!("SkyExposed: {:?}", chunk.heightmap_store().get_kind(HeightmapKind::SkyExposed).get_highest_y_at_position(14, 10));
-        println!("MotionBlockingNoLeaves: {:?}", chunk.heightmap_store().get_kind(HeightmapKind::MotionBlockingNoLeaves).get_highest_y_at_position(14, 10));
-        println!("MotionBlocking: {:?}", chunk.heightmap_store().get_kind(HeightmapKind::MotionBlocking).get_highest_y_at_position(14, 10));
-        println!("Ground: {:?}", chunk.heightmap_store().get_kind(HeightmapKind::Ground).get_highest_y_at_position(14, 10));
-    });
+    let block_filter = Filter::Compare(FilterKey::ID, FilterOperation::Equals, "minecraft:redstone_block".into());
 
-    let block_filter = Filter::And(vec![
-        Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:stone".into())),
-        Filter::Compare(FilterKey::X_POSITION.into(), FilterOperation::Equals, 3.into()),
-        Filter::Compare(FilterKey::Z_POSITION.into(), FilterOperation::Equals, 3.into())
-    ]);
+   world.with(|w| {
+       let mut sel = SelectionBuilder::new_owned(w, w.version()).with_chunk_position(
+           ChunkPosition::new(14, -7, "overworld")
+       ).build();
+       sel.find_blocks(block_filter, |b| {
+           println!("{:?}", b);
+           true
+       })
+   })
 
-    let entity_filter = Filter::Compare(FilterKey::ID.into(), FilterOperation::Equals, ComparableValue::Text("minecraft:item".into()));
-
-    let mut selection = SelectionBuilder::new(&world)
-        .with_chunk_position(ChunkPosition::new(0,0,"overworld"))
-        .build();
-
-    // println!("Blocks in column:");
-    // selection.find_blocks(block_filter, |mut block| {
-    //     println!("\t{} at {}", block.id(), block.position());
-    //     true
-    // });
-
-    // selection.find_entities(
-    //     entity_filter,
-    //     |e| {
-    //         println!("{:?}", e);
-    //         true
-    //     }
-    // )
     // TODO: Seems like it searches blocks from y>0
-
+    // /tp 236 -26 -105
 }

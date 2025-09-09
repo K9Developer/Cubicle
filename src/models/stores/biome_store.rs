@@ -110,13 +110,10 @@ impl BiomeStore {
     #[inline]
     pub fn indices_slice_mut(&mut self) -> &mut [usize] { <Self as StoreLike<String>>::indices_slice_mut(self) }
 
-    pub fn get_biome_at_block_position(&self, relative_position: Position) -> Option<String> {
-        let p = Position::new(
-            relative_position.dimension(),
-            relative_position.x().div_euclid(BIOME_CELL_SIZE),
-            relative_position.y().div_euclid(BIOME_CELL_SIZE),
-            relative_position.z().div_euclid(BIOME_CELL_SIZE)
-        );
-        self.get_biome_at_position(p)
+    pub fn get_biome_at_block_position(&self, mut relative_position: Position) -> Option<String> {
+        relative_position.set_x(relative_position.x() / BIOME_CELL_SIZE);
+        relative_position.set_y(relative_position.y() / BIOME_CELL_SIZE);
+        relative_position.set_z(relative_position.z() / BIOME_CELL_SIZE);
+        self.get_biome_at_position(relative_position)
     }
 }

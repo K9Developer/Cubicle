@@ -38,8 +38,8 @@ impl<'a> FullBlock<'a> {
     }
 
     pub fn id(&self) -> &str { &self.name }
-    pub fn namespace(&self) -> &str { self.name.split(':').nth(1).unwrap_or("") }
-    pub fn key(&self) -> &str {self.name.split(':').nth(2).unwrap_or("")}
+    pub fn namespace(&self) -> &str { self.name.split(':').nth(0).unwrap_or("") }
+    pub fn key(&self) -> &str {self.name.split(':').nth(1).unwrap_or("")}
     pub fn position(&self) -> &Position { &self.position }
     pub fn properties(&self) -> &Properties { &self.extra }
     pub fn palette_block(&self) -> PaletteBlock {

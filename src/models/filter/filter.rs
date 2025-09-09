@@ -7,7 +7,7 @@ use crate::models::world::fulls::full_entity::FullEntity;
 
 #[derive(Clone, Debug)]
 pub enum Filter<'a> {
-    Compare(String, FilterOperation, ComparableValue),
+    Compare(&'a str, FilterOperation, ComparableValue),
     And(Vec<Filter<'a>>),
     Or(Vec<Filter<'a>>),
     Not(Vec<Filter<'a>>),
