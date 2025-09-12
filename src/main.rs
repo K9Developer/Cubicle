@@ -28,7 +28,7 @@ WorldContentManager {
 
 TODO: For example: have set_block for chunk, dimension, and the WorldContentManager - then they'll each call each other after a bit of position tweaking.
 TODO: have WorldMetadata like WorldContentManager
-
+TODO: Writers
 TODO: In the future add an extension that will allow for more structure control like (pesudo) `(structure as Village).houses()`
 
 TODO: Have better entity types. Things with similar stuff. Like Item, Zombie / Skeleton, etc., Player, etc.
@@ -63,15 +63,19 @@ fn main() {
     let block_filter = Filter::Compare(FilterKey::ID, FilterOperation::Equals, "minecraft:redstone_block".into());
 
    world.with(|w| {
-       let mut sel = SelectionBuilder::new_owned(w, w.version()).with_chunk_position(
-           ChunkPosition::new(14, -7, "overworld")
-       ).build();
-       sel.find_blocks(block_filter, |b| {
-           println!("{:?}", b);
-           true
-       })
-   })
+       let mut sel = SelectionBuilder::new_owned(w, w.version()).with_chunk_position(ChunkPosition::new(14, -7, "overworld")).build();
+       let chunk = sel.chunk(ChunkPosition::new(14, -7, "overworld")).unwrap();
 
-    // TODO: Seems like it searches blocks from y>0
-    // /tp 236 -26 -105
+
+       chunk.with(|c| {
+           let b1 = c.biome_store().get_biome_at_position(Position::new("overworld", 13, 97, 4)).unwrap();
+           let b2 = c.biome_store().get_biome_at_position(Position::new("overworld", 13, 98, 4)).unwrap();
+           println!("Should be plains: {}", b1);
+           println!("Should be beach: {}", b2);
+       })
+
+   })
 }
+
+// plains - 237 97 -108
+// beach - 237 98 -108

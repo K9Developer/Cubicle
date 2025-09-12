@@ -42,12 +42,18 @@ impl Dimension {
     pub fn chunk_count(&self) -> usize { self.chunks.len() }
     pub fn entity_count(&self) -> usize { self.entity_store.count() }
 
-    pub fn set_chunk(&mut self, chunk: Chunk) {
+    pub fn set_chunk(&mut self, chunk: Chunk) -> ChunkType {
         let pos = chunk.position();
-        self.chunks.insert((pos.x(), pos.z()), Arc::new(Mutex::new(chunk)));
+        let chunk = Arc::new(Mutex::new(chunk));
+        let chunk_clone = chunk.clone();
+        self.chunks.insert((pos.x(), pos.z()), chunk);
+        chunk_clone
     }
     pub fn set_chunks(&mut self, chunks: Vec<Chunk>) {
         for chunk in chunks { self.set_chunk(chunk); }
+    }
+    pub fn delete_chunk(&mut self, chunk_position: (i32, i32)) -> Option<ChunkType> {
+        self.chunks.remove(&chunk_position)
     }
 
     pub fn select<'r, 'a>(&self, world: &'r mut World<'a>) -> Selection<'r, 'a> {

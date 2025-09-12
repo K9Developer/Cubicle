@@ -5,9 +5,13 @@ use std::sync::{Arc, Mutex};
 use crate::constants::versions::Version;
 use crate::loaders::loader::Loader;
 use crate::models::other::region::{Region, RegionType};
+use crate::models::other::tick::Tick;
+use crate::models::positions::chunk_position::ChunkPosition;
+use crate::models::world::chunk::Chunk;
 use crate::models::world::dimension::Dimension;
+use crate::models::world::fulls::full_block::FullBlock;
 use crate::models::world::selection::{Selection, SelectionBuilder};
-use crate::types::{RegionPosition, WorldType};
+use crate::types::{ChunkType, RegionPosition, WorldType};
 // TODO: When loading a world have a WorldInfo struct with readonly flag
 
 pub struct World<'a> {
@@ -64,6 +68,30 @@ impl<'a> World<'a> {
     pub fn set_seed(&mut self, seed: u64) { self.seed = seed; }
     pub fn set_dimension(&mut self, name: String, dimension: Dimension) { self.dimensions.insert(name, dimension); }
     pub fn set_unloaded_regions(&mut self, unloaded_regions: Vec<Region>) { self.unloaded_regions = unloaded_regions }
+
+    pub fn set_chunk(&mut self, position: ChunkPosition, block: FullBlock) -> Option<ChunkType> {
+        let dim = self.dimension_mut(position.dimension());
+        let chunk = Chunk::new(
+            self.version.clone(),
+            position,
+            self.version.data.version_data,
+            Tick::new(0),
+            Tick::new(0),
+            "minecraft:full".to_string(),
+        );
+
+        match dim {
+            Some(dim) => {
+                Some(dim.set_chunk(chunk))
+            },
+            None => { None }
+        }
+    }
+
+    pub fn delete_chunk(&mut self, position: ChunkPosition) -> Option<ChunkType> {
+        let dim = self.dimension_mut(position.dimension());
+        dim?.delete_chunk(position.position())
+    }
 
  }
 

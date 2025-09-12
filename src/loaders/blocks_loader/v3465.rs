@@ -29,12 +29,12 @@ pub(super) struct BlockLoaderV3465 {
 }
 
 impl BlockLoaderV3465 {
-    unsafe fn parse_longs(&self, longs: &[u64], bits_per_entry: u32, max_entries: usize, index_replacement_map: &[usize], output_slice: &mut [usize]) {
+    unsafe fn parse_longs(&self, longs: Vec<u64>, bits_per_entry: u32, max_entries: usize, index_replacement_map: &[usize], output_slice: &mut [usize]) {
         let entries_per_long = (u64::BITS / bits_per_entry) as usize;
         let mut current_entry_count = 0;
         let mask: usize = (1 << bits_per_entry) - 1;
 
-        for &long_value in longs {
+        for long_value in longs {
             let mut shifted_value = long_value as usize;
 
             for _ in 0..entries_per_long {
@@ -68,9 +68,9 @@ impl BlockLoaderV3465 {
         let indices = block_store.indices_slice_mut();
         let section_indices: &mut [usize] = &mut indices[start..end];
 
-        if let Some(Value::LongArray(arr)) = block_states.data.as_ref() {
-            let section_data_i64: &[i64] = &*arr;
-            let longs: &[u64] = unsafe { std::slice::from_raw_parts(section_data_i64.as_ptr() as *const u64, section_data_i64.len(), ) };
+        if let Some(Value::LongArray(arr)) = block_states.data {
+            let section_data_i64: Vec<i64> = arr.into_inner();
+            let longs: Vec<u64> = section_data_i64.into_iter().map(|x| x as u64).collect();;
             let bits_per_block: u32 = max(bit_length(old_palette_len as i32 - 1), 4);
 
             self.parse_longs(longs, bits_per_block, section_block_count, index_replacement_map.as_slice(), section_indices);
@@ -100,9 +100,9 @@ impl BlockLoaderV3465 {
         let indices = biome_store.indices_slice_mut();
         let section_indices: &mut [usize] = &mut indices[start..end];
 
-        if let Some(Value::LongArray(arr)) = biome_states.data.as_ref() {
-            let section_data_i64: &[i64] = &*arr;
-            let longs: &[u64] = unsafe { std::slice::from_raw_parts(section_data_i64.as_ptr() as *const u64, section_data_i64.len(), ) };
+        if let Some(Value::LongArray(arr)) = biome_states.data {
+            let section_data_i64: Vec<i64> = arr.into_inner();
+            let longs: Vec<u64> = section_data_i64.into_iter().map(|x| x as u64).collect();
             let bits_per_biome: u32 = bit_length(old_palette_len as i32 - 1);
 
             self.parse_longs(longs, bits_per_biome, section_biome_count, index_replacement_map.as_slice(), section_indices);
