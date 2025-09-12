@@ -1,5 +1,5 @@
 use cubicle::constants::versions::{VersionManager};
-use cubicle::models::world::world::{WithLock, World};
+use cubicle::models::world::world::{World};
 use std::time::Instant;
 use cubicle::models::filter::comparable_value::ComparableValue;
 use cubicle::models::filter::filter::Filter;
@@ -11,30 +11,15 @@ use cubicle::models::positions::whole_position::Position;
 use cubicle::models::world::selection::{Selection, SelectionBuilder};
 use cubicle::traits::access::prelude::{BlockReader, EntityReader};
 use cubicle::types::{HeightmapKind, RegionPosition, WorldKind};
+use cubicle::utils::lock_utils::WithLock;
 use cubicle::utils::position_utils::{chunk_offset_to_position, chunk_position_to_world_position, relative_position_to_world_position};
 // TODO: Finish all todos before doing more versions!
 /*
-TODO: Have a WorldContentManager that will be in charge of the API of the content of the world. like below:
-World {
-    content_manager: WorldContentManager
-}
 
-WorldContentManager {
-    entity_manager: EntityManager,
-    block_manager: BlockManager,
-    structure_manager: StructureManager,
-    heightmap_manager: HeightmapManager
-}
-
-TODO: For example: have set_block for chunk, dimension, and the WorldContentManager - then they'll each call each other after a bit of position tweaking.
-TODO: have WorldMetadata like WorldContentManager
-TODO: Writers
+TODO: Writers - have dirty region list on each dimension and then world will have save_dirty_as() save_dirty() save_all_as() save_all()
 TODO: In the future add an extension that will allow for more structure control like (pesudo) `(structure as Village).houses()`
 
 TODO: Have better entity types. Things with similar stuff. Like Item, Zombie / Skeleton, etc., Player, etc.
-TODO: When taking chunk_nbt for blocks and structures try to make blocks return the chunk_nbt so we can move it to structures next instead of having a ref and then cloning stuff. OR move .structures into the structures and then its all going to work fine
-
-TODO: Have traits like in the link for world, dimension, chunk and they each propagate down after position modification: https://chatgpt.com/s/t_68aa03ff5aa48191abc4158adf2e91ef
 
 TODO: Make sure biomes are exact - look at edge of biome and check
 

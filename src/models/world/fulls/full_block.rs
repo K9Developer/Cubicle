@@ -30,7 +30,7 @@ impl<'a> FullBlock<'a> {
     pub fn new_with_data(world_ref: &WorldType<'a>, block: PaletteBlock, position: Position) -> Self{
         Self {
             name: block.name().to_string(),
-            extra: block.properties().clone(), // TODO: Dont clone, we move the block here...
+            extra: block.properties().to_owned(),
             position,
             world_ref: world_ref.clone(),
             null_flag: false,

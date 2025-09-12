@@ -8,7 +8,7 @@ use crate::models::other::region::{Region, RegionType};
 use crate::models::nbt_structures::v3465::entities::{NBTChunk};
 use crate::constants::constants::{ZLIB_COMPRESSION_TYPE};
 use crate::constants::versions::Version;
-use crate::loaders::utils::{get_region_files_in_folder, nbt_uuid_to_u128, parse_region_file, uncompress_zlib};
+use crate::loaders::utils::{get_region_files_in_folder, handle_chunk_compression, nbt_uuid_to_u128, parse_region_file, uncompress_zlib};
 use crate::models::entity::entity::{Entity, EntityType, MobEntity};
 use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
@@ -35,7 +35,7 @@ impl EntityLoaderV3465 {
                     <(f64, f64, f64)>::from(entity.motion),
                     entity.is_on_ground,
                     EntityPosition::new(entity.position[0], entity.position[1], entity.position[2], entity.rotation[0], entity.rotation[1], dimension),
-                    nbt_uuid_to_u128(<[i32; 4]>::try_from(uuid_parts).unwrap()), // TODO: maybe this is slow too.
+                    nbt_uuid_to_u128(<[i32; 4]>::try_from(uuid_parts).unwrap()),
                     Properties::new(entity.others)
                 );
                 entity_list.push(Entity::Mob(e));
@@ -75,18 +75,7 @@ impl<'a> EntityLoader<'a> for EntityLoaderV3465 {
     }
 
     fn parse_entity_chunk(&self, data: Vec<u8>, compression_type: u8, dimension: &str) -> Option<Vec<Entity>> {
-        let mut chunk_data = data;
-
-        match compression_type {
-            ZLIB_COMPRESSION_TYPE => {
-                match uncompress_zlib(chunk_data) {
-                    Some(c) => chunk_data = c,
-                    None => { return None; }
-                }
-            }
-            _ => { todo!() }
-        }
-
+        let chunk_data = handle_chunk_compression(compression_type, data)?;
         let chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");
 
         let mut entities = Vec::<Entity>::with_capacity(chunk_nbt.entities.len());

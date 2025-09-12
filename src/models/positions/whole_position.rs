@@ -57,8 +57,8 @@ impl Position {
         (height * chunk_biome_size * chunk_biome_size + self.z() * chunk_biome_size + self.x()) as usize
     }
 
-    pub fn to_block_coords(&self, chunk_size: i32) -> Position { // TODO: Add height maps so i can get current ground Y
-        Position::new(self.dimension(), (self.x() * chunk_size) as i32, (self.y() * chunk_size) as i32, (self.z() * chunk_size) as i32)
+    pub fn to_block_coords(&self, chunk_size: i32) -> Position {
+        Position::new(self.dimension(), self.x() * chunk_size, self.y() * chunk_size, self.z() * chunk_size)
     }
 
     pub fn to_chunk_ref(&self) -> i64 {

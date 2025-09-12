@@ -7,7 +7,6 @@ use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::entity_store::EntityStoreKey;
 use crate::models::stores::heightmap_store::HeightmapStore;
 use crate::models::stores::structure_store::StructureStoreReference;
-// TODO: have multiple selector like EntitySelector, then have stuff like remove_entity(selector: EntitySelector) - this will be used in filters too.
 
 #[derive(Debug)]
 pub struct Chunk {

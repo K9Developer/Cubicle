@@ -4,7 +4,7 @@ use crate::models::positions::entity_position::EntityPosition;
 use crate::models::positions::whole_position::Position;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ComparableValue { // TODO: Expand on this...
+pub enum ComparableValue {
     Null,
     Bool(bool),
     Int(i64),

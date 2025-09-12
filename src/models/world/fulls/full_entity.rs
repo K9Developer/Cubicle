@@ -58,5 +58,3 @@ impl Debug for FullEntity<'_> {
         .field("entity", &self.entity).finish()
     }
 }
-
-// TODO: Add builder

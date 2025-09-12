@@ -15,9 +15,8 @@ pub struct PaletteBlock {
 
 impl PaletteBlock {
     pub fn new(name: &str, extra: Option<HashMap<String, Value>>) -> PaletteBlock {
-        // TODO: Enforce a namespace in a faster way
         PaletteBlock {
-            name: if name.contains(":") { name.to_string() } else { ("minecraft:".to_owned() + name).to_owned() },
+            name: name.to_string(),
             extra: Properties::new(extra.unwrap_or_default()),
             null_flag: false,
         }
@@ -31,7 +30,16 @@ impl PaletteBlock {
         }
     }
 
-    pub fn name(&self) -> & str { &self.name }
+    pub fn name(&mut self) -> & str {
+        if self.name.contains(':') {
+            &self.name
+        } else {
+            let full = format!("minecraft:{}", self.name);
+            self.name = full;
+            &self.name
+        }
+    }
+
     pub fn namespace(&self) -> & str { self.name.split(':').next().unwrap() }
     pub fn id(&self) -> & str { self.name.split(':').nth(1).unwrap() }
     pub fn properties(&self) -> &Properties { &self.extra }
@@ -93,12 +101,12 @@ mod tests {
 
     #[test]
     fn block_name_and_namespace() {
-        let b = PaletteBlock::new("minecraft2:air", None);
+        let mut b = PaletteBlock::new("minecraft2:air", None);
         assert_eq!("minecraft2:air", b.name());
         assert_eq!("air", b.id());
         assert_eq!("minecraft2", b.namespace());
 
-        let b = PaletteBlock::new("air", None);
+        let mut b = PaletteBlock::new("air", None);
         assert_eq!("minecraft:air", b.name());
         assert_eq!("air", b.id());
         assert_eq!("minecraft", b.namespace());

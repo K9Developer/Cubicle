@@ -73,7 +73,7 @@ impl<'a> Filter<'a> {
                     result
                 } else {
                     // bad evaluation // TODO: better handling?
-                    return false;
+                    false
                 }
             }
             Filter::And(filters) => {

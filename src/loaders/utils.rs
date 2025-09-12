@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use flate2::read::ZlibDecoder;
-use crate::constants::constants::{MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE, MCA_REGION_SECTOR_SIZE};
+use crate::constants::constants::{MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE, MCA_REGION_SECTOR_SIZE, ZLIB_COMPRESSION_TYPE};
 use crate::models::other::region::{Region, RegionType};
 use crate::types::RegionPosition;
 
@@ -109,6 +109,18 @@ pub fn uncompress_zlib(data: Vec<u8>) -> Option<Vec<u8>> {
     }
 
     Some(decompressed)
+}
+
+pub fn handle_chunk_compression(compression_type: u8, chunk_data: Vec<u8>) -> Option<Vec<u8>> {
+    match compression_type {
+        ZLIB_COMPRESSION_TYPE => {
+            match uncompress_zlib(chunk_data) {
+                Some(c) => Some(c),
+                None => { None }
+            }
+        }
+        _ => { todo!() }
+    }
 }
 
 #[inline(always)]

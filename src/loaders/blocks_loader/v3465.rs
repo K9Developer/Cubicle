@@ -1,7 +1,7 @@
 use super::loader::BlockLoader;
 use crate::constants::constants::{BIOME_CELL_SIZE, ZLIB_COMPRESSION_TYPE};
 use crate::constants::versions::Version;
-use crate::loaders::utils::{get_region_files_in_folder, parse_region_file, uncompress_zlib};
+use crate::loaders::utils::{get_region_files_in_folder, handle_chunk_compression, parse_region_file, uncompress_zlib};
 use crate::models::nbt_structures::v3465::regular::{NBTBlockPalette, NBTChunk, NBTSection};
 use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
@@ -47,7 +47,6 @@ impl BlockLoaderV3465 {
         }
     }
 
-    // TODO: Optimize the block palette loading
     unsafe fn parse_section_blocks(&self, section: NBTSection, block_store: &mut BlockStore, section_block_count: usize) {
         let Some(block_states) = section.block_states else {return};
         let Some(block_palette) = block_states.palette else { return; };
@@ -159,7 +158,7 @@ impl BlockLoaderV3465 {
                     children.push(GenericChildStructure::new(
                         &*child.id,
                         BoundingBox::from_BB(child.bounding_box, chunk_obj.position().dimension()),
-                        Properties::new(child.others) // TODO: I really dont like this - its a structure too so very slow. The thing is chunk_nbt is owned by the other func
+                        Properties::new(child.others)
                     ));
                 }
             }
@@ -222,20 +221,8 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
         compression_type: u8,
         dimension: &str,
     ) -> Option<(Chunk, Vec<GenericParentStructure>)> {
-        let mut chunk_data = data;
 
-
-        // TODO: have handle_chunk_compression so no dups in entity loading too
-        match compression_type {
-            ZLIB_COMPRESSION_TYPE => {
-                match uncompress_zlib(chunk_data) {
-                    Some(c) => chunk_data = c,
-                    None => { return None; }
-                }
-            }
-            _ => { todo!() }
-        }
-
+        let chunk_data = handle_chunk_compression(compression_type, data)?;
         let mut chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");
 
         let mut chunk = Chunk::new(

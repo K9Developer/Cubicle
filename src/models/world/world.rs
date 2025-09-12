@@ -70,7 +70,6 @@ impl<'a> World<'a> {
     pub fn set_unloaded_regions(&mut self, unloaded_regions: Vec<Region>) { self.unloaded_regions = unloaded_regions }
 
     pub fn set_chunk(&mut self, position: ChunkPosition, block: FullBlock) -> Option<ChunkType> {
-        let dim = self.dimension_mut(position.dimension());
         let chunk = Chunk::new(
             self.version.clone(),
             position,
@@ -80,7 +79,7 @@ impl<'a> World<'a> {
             "minecraft:full".to_string(),
         );
 
-        match dim {
+        match self.dimension_mut(chunk.position().dimension()) {
             Some(dim) => {
                 Some(dim.set_chunk(chunk))
             },
@@ -137,34 +136,5 @@ impl<'a> World<'a> {
                 }
             }
         }
-    }
-}
-
-// TODO: separate this to somewhere else
-pub trait WithLock<T> {
-    fn with<R>(&self, f: impl FnOnce(&mut T) -> R) -> R;
-    fn with_read<R>(&self, f: impl FnOnce(&T) -> R) -> R;
-}
-
-impl<T> WithLock<T> for Mutex<T> {
-    fn with<R>(&self, f: impl FnOnce(&mut T) -> R) -> R {
-        let mut g = self.lock().unwrap();
-        f(&mut *g)
-    }
-    fn with_read<R>(&self, f: impl FnOnce(&T) -> R) -> R {
-        let g = self.lock().unwrap();
-        f(&*g)
-    }
-}
-
-impl<T> WithLock<T> for Arc<Mutex<T>> {
-    fn with<R>(&self, f: impl FnOnce(&mut T) -> R) -> R {
-        let mut g = self.lock().unwrap();
-        f(&mut *g)
-    }
-
-    fn with_read<R>(&self, f: impl FnOnce(&T) -> R) -> R {
-        let g = self.lock().unwrap();
-        f(&*g)
     }
 }

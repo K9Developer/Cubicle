@@ -43,11 +43,10 @@ impl Dimension {
     pub fn entity_count(&self) -> usize { self.entity_store.count() }
 
     pub fn set_chunk(&mut self, chunk: Chunk) -> ChunkType {
-        let pos = chunk.position();
-        let chunk = Arc::new(Mutex::new(chunk));
-        let chunk_clone = chunk.clone();
-        self.chunks.insert((pos.x(), pos.z()), chunk);
-        chunk_clone
+        let pos = chunk.position().position();
+        let arced_chunk = Arc::new(Mutex::new(chunk));
+        self.chunks.insert(pos, arced_chunk.clone());
+        arced_chunk
     }
     pub fn set_chunks(&mut self, chunks: Vec<Chunk>) {
         for chunk in chunks { self.set_chunk(chunk); }
