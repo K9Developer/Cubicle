@@ -2,7 +2,7 @@
 
 <p align="center"><img src="https://socialify.git.ci/K9Developer/Cubicle/image?font=Inter&amp;language=1&amp;name=1&amp;owner=1&amp;pattern=Plus&amp;theme=Dark" alt="project-image"></p>
 
-<p id="description">The universal minecraft world parser and editor. (Still WIP)</p>
+<p id="description">The blazingly fast universal minecraft world parser and editor. (Still WIP)</p>
 
 <p align="center"><img src="https://img.shields.io/github/last-commit/K9Developer/Cubicle" alt="shields"><img src="https://img.shields.io/github/issues/K9Developer/Cubicle" alt="shields"><img src="https://img.shields.io/github/license/K9Developer/Cubicle" alt="shields"><img src="https://img.shields.io/badge/version-0.7v-blue" alt="shields"></p>
 
