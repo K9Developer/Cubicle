@@ -6,8 +6,6 @@
 
 <p align="center"><img src="https://img.shields.io/github/last-commit/K9Developer/Cubicle" alt="shields"><img src="https://img.shields.io/github/issues/K9Developer/Cubicle" alt="shields"><img src="https://img.shields.io/github/license/K9Developer/Cubicle" alt="shields"><img src="https://img.shields.io/badge/version-0.7v-blue" alt="shields"></p>
 
-<h2>Project Screenshots:</h2>
-
 <img src="https://raw.githubusercontent.com/K9Developer/Cubicle/refs/heads/master/cubicle_logo_sm.png" alt="project-screenshot" width="400" height="400">
 
   
