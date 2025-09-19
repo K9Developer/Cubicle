@@ -15,10 +15,12 @@ use std::sync::Arc;
 use std::time::Instant;
 use crate::models::other::properties::Properties;
 use crate::models::positions::chunk_position::ChunkPosition;
+use crate::models::positions::whole_position::Position;
 use crate::models::stores::biome_store::BiomeStore;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::heightmap_store::HeightmapStore;
 use crate::models::stores::structure_store::StructureStoreReference;
+use crate::models::world::tile_tick::{TileTick, TileTickType};
 use crate::models::world_structures::generic_structure::{BoundingBox, GenericChildStructure, GenericParentStructure};
 use crate::types::{HeightmapKind, WorldKind};
 use crate::utils::generic_utils::bit_length;
@@ -119,17 +121,29 @@ impl BlockLoaderV3465 {
         }
     }
 
-    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, mut chunk_nbt: NBTChunk) {
+    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, mut chunk_nbt: NBTChunk, dimension: String) {
+        // tile ticks
+        for bt in chunk_nbt.block_ticks {
+            let tile_tick = TileTick::new(Position::new(&dimension, bt.x, bt.y, bt.z), bt.priority, bt.time_until_tick, TileTickType::BLOCK);
+            chunk_obj.set_tile_tick(tile_tick);
+        }
+        for ft in chunk_nbt.fluid_ticks {
+            let tile_tick = TileTick::new(Position::new(&dimension, ft.x, ft.y, ft.z), ft.priority, ft.time_until_tick, TileTickType::FLUID);
+            chunk_obj.set_tile_tick(tile_tick);
+        }
+
         let (block_store, biome_store, heightmap_store) = chunk_obj.stores_mut();
 
         let section_block_count = (self.version.data.section_height * self.version.data.chunk_size * self.version.data.chunk_size) as usize;
         let section_biome_count = section_block_count / BIOME_CELL_SIZE.pow(3) as usize;
 
+        // heightmaps
         self.parse_chunk_heightmaps(chunk_nbt.heightmaps.ocean_floor.take(), HeightmapKind::Ground, heightmap_store);
         self.parse_chunk_heightmaps(chunk_nbt.heightmaps.motion_blocking.take(), HeightmapKind::MotionBlocking, heightmap_store);
         self.parse_chunk_heightmaps(chunk_nbt.heightmaps.motion_blocking_no_leaves.take(), HeightmapKind::MotionBlockingNoLeaves, heightmap_store);
         self.parse_chunk_heightmaps(chunk_nbt.heightmaps.world_surface.take(), HeightmapKind::SkyExposed, heightmap_store);
 
+        // blocks and biomes
         for mut section in chunk_nbt.sections {
             section = self.parse_section_biomes(section, biome_store, section_biome_count);
             self.parse_section_blocks(section, block_store, section_block_count);
@@ -238,8 +252,9 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
             chunk_nbt.status.clone(),
         );
 
+        let dim = chunk.position().dimension().to_string();
         let structures = self.populate_chunk_with_structures(&mut chunk, &mut chunk_nbt);
-        unsafe { self.populate_chunk_with_blocks(&mut chunk, chunk_nbt); }
+        unsafe { self.populate_chunk_with_blocks(&mut chunk, chunk_nbt, dim); }
         Some((chunk, structures))
     }
 }

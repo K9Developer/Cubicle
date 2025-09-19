@@ -2,11 +2,13 @@ use std::sync::Arc;
 use crate::constants::versions::Version;
 use crate::models::other::tick::Tick;
 use crate::models::positions::chunk_position::ChunkPosition;
+use crate::models::positions::whole_position::Position;
 use crate::models::stores::biome_store::BiomeStore;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::entity_store::EntityStoreKey;
 use crate::models::stores::heightmap_store::HeightmapStore;
 use crate::models::stores::structure_store::StructureStoreReference;
+use crate::models::world::tile_tick::TileTick;
 
 #[derive(Debug)]
 pub struct Chunk {
@@ -19,6 +21,7 @@ pub struct Chunk {
     block_store: BlockStore,
     biome_store: BiomeStore,
     heightmap_store: HeightmapStore,
+    tile_ticks: Vec<TileTick>,
 
     entity_keys: Vec<EntityStoreKey>,
     structures: Vec<StructureStoreReference>,
@@ -46,6 +49,7 @@ impl Chunk {
             block_store: BlockStore::new(version.clone()),
             biome_store: BiomeStore::new(version.clone()),
             heightmap_store: HeightmapStore::new(version.clone()),
+            tile_ticks: Vec::new(),
             version,
 
             entity_keys: Vec::new(),
@@ -79,6 +83,7 @@ impl Chunk {
     pub fn biome_store_mut(&mut self) -> &mut BiomeStore { &mut self.biome_store }
     pub fn heightmap_store(&self) -> &HeightmapStore { &self.heightmap_store }
     pub fn heightmap_store_mut(&mut self) -> &mut HeightmapStore { &mut self.heightmap_store }
+    pub fn tile_ticks(&self) -> &Vec<TileTick> { &self.tile_ticks }
 
     pub fn entity_keys(&self) -> &Vec<EntityStoreKey> { &self.entity_keys }
     pub fn entity_count(&self) -> usize { self.entity_keys.len() }
@@ -102,6 +107,26 @@ impl Chunk {
 
     pub fn add_entity(&mut self, entity_key: EntityStoreKey) { self.entity_keys.push(entity_key); }
     pub fn add_structure(&mut self, structure: StructureStoreReference) { self.structures.push(structure); }
+
+    pub fn set_tile_tick(&mut self, tile_tick: TileTick) {
+        for (ind, tt) in self.tile_ticks.iter().enumerate() {
+            if tt.position() == tile_tick.position() {
+                self.tile_ticks[ind] = tile_tick;
+                return;
+            }
+        }
+
+        self.tile_ticks.push(tile_tick);
+    }
+
+    pub fn remove_tile_tick_at(&mut self, position: &Position) {
+        for (ind, tt) in self.tile_ticks.iter().enumerate() {
+            if tt.position() == position {
+                self.tile_ticks.swap_remove(ind);
+                return;
+            }
+        }
+    }
 
     pub fn recalculate_heightmaps(&mut self) { todo!() } // TODO: Also needs to be called per column when a block changed or something
 }

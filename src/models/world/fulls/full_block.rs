@@ -27,7 +27,7 @@ impl<'a> FullBlock<'a> {
         }
     }
 
-    pub fn new_with_data(world_ref: &WorldType<'a>, block: PaletteBlock, position: Position) -> Self{
+    pub fn new_with_data(world_ref: &WorldType<'a>, mut block: PaletteBlock, position: Position) -> Self{
         Self {
             name: block.name().to_string(),
             extra: block.properties().to_owned(),
