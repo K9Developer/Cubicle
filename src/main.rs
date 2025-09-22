@@ -17,15 +17,26 @@ use cubicle::utils::position_utils::{chunk_offset_to_position, chunk_position_to
 /*
 
 // TODO: block_entities
-// TODO: Have way more specificity. For example:
+// TODO: Have way more specificity. For example (Entities (items and categories of items), block entities, etc.):
 
 enum Entity {
-    Zombie(Zombie)
+    Item(ItemEntity)
 }
 
-enum Zombie {
-    Normal()
-    Drowned()
+enum ItemEntity {
+    Container(ContainerItem)
+    Other(GenericItem)
+}
+
+struct ContainerItem {
+    get_inv()
+}
+
+match entity {
+    Entity::Item(i) => {
+        ItemEntity::Container(c) => {
+        }
+    }
 }
 
 
@@ -38,6 +49,16 @@ TODO: Make sure biomes are exact - look at edge of biome and check
 
 TODO: Parser optimizations - noticed creating chunk::new is the slowest operation by more than 3 times than everything together. Probably the stores allocating so much memory, figure out how to store more compact?
 TODO: Load all needed things
+TODO: Block filter should filter for block entities too
+TODO: Think about string pool since a lot of dup strings
+
+TODO: PropertiesTranslator - translate properties to other versions
+TODO: Crafter for block entity
+TODO: Test changing chest inventory and saving (when changing the inv need to affect the properties too)
+
+TODO: When saving a world with a sign for example that has both sides with text to a version lower that doesnt have that feature we should have the function return StripLog or somth that shows what was ignored
+TODO: FullBlock should have attached_block_entity: Option<BlockEntity>
+TODO: Some blocks have some props in BlockEntity and some in the PaletteBlock... should i keep it like that or have some types like in BlockEntity so there are helper funcs
 */
 
 fn main() {
@@ -78,5 +99,3 @@ fn main() {
    })
 }
 
-// plains - 237 97 -108
-// beach - 237 98 -108

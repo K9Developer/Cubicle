@@ -6,3 +6,4 @@ pub mod world_structures;
 pub mod stores;
 pub mod filter;
 pub mod positions;
+pub mod block_entity;

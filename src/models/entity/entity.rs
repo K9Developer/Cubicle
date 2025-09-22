@@ -1,3 +1,4 @@
+use crate::constants::constants::PLAYER_INVENTORY_SLOT_COUNT;
 use crate::models::other::inventory::Inventory;
 use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
@@ -58,7 +59,7 @@ impl Entity {
                 Entity::Player(
                     PlayerEntity {
                         base: generic,
-                        inventory: Inventory{},
+                        inventory: Inventory::new(PLAYER_INVENTORY_SLOT_COUNT),
                         extra
                     }
                 )

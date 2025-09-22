@@ -1,34 +1,12 @@
 use std::time::Duration;
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Tick {
     tick: usize,
 }
 
-pub trait TickTrait {
-    fn get_tick(&self) -> usize;
-    fn get_millis(&self) -> usize;
-    fn get_seconds(&self) -> f64;
-    fn get_minutes(&self) -> f64;
-    fn get_hours(&self) -> f64;
-    fn get_duration(&self) -> Duration;
-
-    fn set_tick(&mut self, tick: usize);
-    fn set_millis(&mut self, millis: usize);
-    fn set_seconds(&mut self, seconds: f64);
-    fn set_minutes(&mut self, minutes: f64);
-    fn set_hours(&mut self, hours: f64);
-    fn set_duration(&mut self, duration: Duration);
-
-    fn add_ticks(&mut self, ticks: usize);
-    fn add_millis(&mut self, millis: usize);
-    fn add_seconds(&mut self, seconds: f64);
-    fn add_minutes(&mut self, minutes: f64);
-    fn add_hours(&mut self, hours: f64);
-    fn add_duration(&mut self, duration: Duration);
-}
-
-impl TickTrait for Tick {
+impl Tick {
     fn get_tick(&self) -> usize {
         self.tick
     }
@@ -105,5 +83,57 @@ impl TickTrait for Tick {
 impl Tick {
     pub fn new(ticks: usize) -> Self {
         Tick { tick: ticks }
+    }
+}
+
+impl Add for Tick {
+    type Output = Tick;
+    fn add(self, other: Tick) -> Tick {
+        Tick::new(self.tick + other.tick)
+    }
+}
+
+impl AddAssign for Tick {
+    fn add_assign(&mut self, other: Tick) {
+        self.tick += other.tick;
+    }
+}
+
+impl Sub for Tick {
+    type Output = Tick;
+    fn sub(self, other: Tick) -> Tick {
+        Tick::new(self.tick.saturating_sub(other.tick))
+    }
+}
+
+impl SubAssign for Tick {
+    fn sub_assign(&mut self, other: Tick) {
+        self.tick = self.tick.saturating_sub(other.tick);
+    }
+}
+
+impl Mul<usize> for Tick {
+    type Output = Tick;
+    fn mul(self, rhs: usize) -> Tick {
+        Tick::new(self.tick * rhs)
+    }
+}
+
+impl MulAssign<usize> for Tick {
+    fn mul_assign(&mut self, rhs: usize) {
+        self.tick *= rhs;
+    }
+}
+
+impl Div<usize> for Tick {
+    type Output = Tick;
+    fn div(self, rhs: usize) -> Tick {
+        Tick::new(self.tick / rhs)
+    }
+}
+
+impl DivAssign<usize> for Tick {
+    fn div_assign(&mut self, rhs: usize) {
+        self.tick /= rhs;
     }
 }
