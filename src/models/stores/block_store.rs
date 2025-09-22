@@ -17,10 +17,14 @@ pub struct BlockStore {
 
 impl BlockStore {
     pub fn new(version: Arc<Version>) -> BlockStore {
+        BlockStore::with_palette_capacity(version, 20) // 20 is a random number - could be optimized
+    }
+
+    pub fn with_palette_capacity(version: Arc<Version>, size: usize) -> BlockStore {
         let height = (version.data.highest_y - version.data.lowest_y).abs();
         let total_blocks = (version.data.chunk_size * version.data.chunk_size * height) as usize;
 
-        let mut p = FastSet::new();
+        let mut p = FastSet::with_capacity(size);
         p.insert(PaletteBlock::new_null());
 
         BlockStore {

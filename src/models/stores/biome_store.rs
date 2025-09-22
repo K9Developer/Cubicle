@@ -81,9 +81,13 @@ impl StoreLike<String> for BiomeStore {
 
 impl BiomeStore {
     pub fn new(version: Arc<Version>) -> Self {
+        BiomeStore::with_palette_capacity(version, 2) // 2 is a random number - could be optimized
+    }
+
+    pub fn with_palette_capacity(version: Arc<Version>, size: usize) -> Self {
         let height = version.data.lowest_y.abs() + version.data.highest_y.abs();
         let total_biomes = (version.data.chunk_size * version.data.chunk_size * height) / BIOME_CELL_SIZE.pow(3);
-        let mut p = FastSet::new();
+        let mut p = FastSet::with_capacity(size);
         p.insert("cubicle:null".to_string());
 
         Self {

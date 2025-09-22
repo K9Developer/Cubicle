@@ -3,8 +3,9 @@ use crate::models::block_entity::block_entity::GenericBlockEntity;
 use crate::models::other::inventory::{Inventory, Item};
 use crate::models::other::mojang_data::text_component::TextComponent;
 use crate::models::other::tick::Tick;
-use crate::traits::block_entity::LockableContainer;
+use crate::traits::block_entity::{BlockEntityTrait, LockableContainer};
 
+#[derive(Debug)]
 pub struct BrewingStandBlockEntity {
     base: GenericBlockEntity,
     items: Inventory,
@@ -28,7 +29,6 @@ impl BrewingStandBlockEntity {
         }
     }
 
-    pub fn base(&self) -> &GenericBlockEntity { &self.base }
     pub fn items(&self) -> &Inventory { &self.items }
     pub fn ticks_left_to_brew(&self) -> &Tick { &self.ticks_left_to_brew }
     pub fn applied_fuel_left(&self) -> u8 { self.applied_fuel_left } // 0-20
@@ -40,6 +40,10 @@ impl BrewingStandBlockEntity {
             .filter_map(|slot| self.items.get_at(slot))
             .collect()
     }
+}
+
+impl BlockEntityTrait for BrewingStandBlockEntity {
+    fn base(&self) -> &GenericBlockEntity { &self.base }
 }
 
 impl LockableContainer for BrewingStandBlockEntity {

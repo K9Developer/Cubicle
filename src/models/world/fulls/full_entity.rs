@@ -15,7 +15,7 @@ impl<'a> FullEntity<'a> {
         let entity: Entity = {
             let mut w = world_ref.lock().unwrap();
             let mut dim = w.dimension_mut(dimension_id).unwrap();
-            (*dim.entity_store_mut().get(entity_key).unwrap()).clone()
+            (*dim.entity_store_mut().get(entity_key)).clone()
         };
 
         Self {

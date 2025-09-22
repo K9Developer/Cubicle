@@ -1,9 +1,11 @@
 use crate::models::block_entity::block_entity::GenericBlockEntity;
+use crate::models::block_entity::prelude::storage_container::types::chiseled_bookshelf::ChiseledBookshelfBlockEntity;
 use crate::models::block_entity::types::storage_container::types::standard_container::StandardStorageContainerBlockEntity;
 use crate::models::other::inventory::Inventory;
 use crate::models::other::mojang_data::text_component::TextComponent;
-use crate::traits::block_entity::{LockableContainer, StorageContainerTrait};
+use crate::traits::block_entity::{BlockEntityTrait, LockableContainer, StorageContainerTrait};
 
+#[derive(Debug)]
 pub struct HopperBlockEntity {
     base: StandardStorageContainerBlockEntity,
     transfer_cooldown: i32
@@ -24,8 +26,11 @@ impl HopperBlockEntity {
     pub fn set_transfer_cooldown(mut self, cooldown: i32){ self.transfer_cooldown = cooldown; }
 }
 
-impl StorageContainerTrait for HopperBlockEntity {
+impl BlockEntityTrait for HopperBlockEntity {
     fn base(&self) -> &GenericBlockEntity { &self.base.base() }
+}
+
+impl StorageContainerTrait for HopperBlockEntity {
     fn items(&self) -> &Inventory { &self.base.items() }
     fn items_mut(&mut self) -> &mut Inventory { self.base.items_mut() }
     fn set_items(&mut self, items: Inventory) { self.base.set_items(items); }

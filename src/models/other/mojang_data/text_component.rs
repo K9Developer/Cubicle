@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use fastnbt::Value;
 use crate::models::other::mojang_data::color::MinecraftColor;
 
+#[derive(Debug)]
 struct TextComponentEvent {
     action: String,
     value: HashMap<String, Value>,
 }
 
+#[derive(Debug)]
 pub struct TextComponent {
     text: String,
     color: MinecraftColor,

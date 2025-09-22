@@ -3,11 +3,12 @@ use crate::models::block_entity::types::storage_container::types::chiseled_books
 use crate::models::block_entity::types::storage_container::types::hopper::HopperBlockEntity;
 use crate::models::block_entity::types::storage_container::types::standard_container::StandardStorageContainerBlockEntity;
 use crate::models::other::inventory::Inventory;
-use crate::traits::block_entity::StorageContainerTrait;
+use crate::traits::block_entity::{BlockEntityTrait, StorageContainerTrait};
 
 // Standard - chest, trapped chest, barrel, shulker box, dispenser, dropper
 // hopper
 // chiseled bookshelf
+#[derive(Debug)]
 pub enum StorageContainerBlockEntity {
     Chest(StandardStorageContainerBlockEntity),
     Barrel(StandardStorageContainerBlockEntity),
@@ -20,11 +21,14 @@ pub enum StorageContainerBlockEntity {
     ChiseledBookshelf(ChiseledBookshelfBlockEntity),
 }
 
-impl StorageContainerTrait for StorageContainerBlockEntity {
+impl BlockEntityTrait for StorageContainerBlockEntity {
     fn base(&self) -> &GenericBlockEntity {
-        let this: &dyn StorageContainerTrait = self;
+        let this: &dyn BlockEntityTrait = self;
         this.base()
     }
+}
+
+impl StorageContainerTrait for StorageContainerBlockEntity {
 
     fn items(&self) -> &Inventory {
         let this: &dyn StorageContainerTrait = self;

@@ -4,6 +4,7 @@ use crate::models::other::tick::Tick;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::positions::whole_position::Position;
 use crate::models::stores::biome_store::BiomeStore;
+use crate::models::stores::block_entity_store::BlockEntityStore;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::entity_store::EntityStoreKey;
 use crate::models::stores::heightmap_store::HeightmapStore;
@@ -22,8 +23,9 @@ pub struct Chunk {
     biome_store: BiomeStore,
     heightmap_store: HeightmapStore,
     tile_ticks: Vec<TileTick>,
-
+    block_entities: BlockEntityStore,
     entity_keys: Vec<EntityStoreKey>,
+
     structures: Vec<StructureStoreReference>,
 
     version: Arc<Version>,
@@ -38,6 +40,24 @@ impl Chunk {
         last_update: Tick,
         status: String,
     ) -> Self {
+        Chunk::with_store_capacity(
+            version, position, data_version, inhabited_time, last_update, status,
+            20*16, 2, 20 // those numbers are random and can be optimized
+        )
+    }
+
+    pub fn with_store_capacity(
+        version: Arc<Version>,
+        position: ChunkPosition,
+        data_version: i32,
+        inhabited_time: Tick,
+        last_update: Tick,
+        status: String,
+
+        block_store_palette_capacity: usize,
+        biome_store_palette_capacity: usize,
+        block_entity_capacity: usize,
+    ) -> Self {
         Chunk {
 
             position,
@@ -46,8 +66,9 @@ impl Chunk {
             last_update,
             status,
 
-            block_store: BlockStore::new(version.clone()),
-            biome_store: BiomeStore::new(version.clone()),
+            block_store: BlockStore::with_palette_capacity(version.clone(), block_store_palette_capacity),
+            biome_store: BiomeStore::with_palette_capacity(version.clone(), biome_store_palette_capacity),
+            block_entities: BlockEntityStore::with_capacity(block_entity_capacity),
             heightmap_store: HeightmapStore::new(version.clone()),
             tile_ticks: Vec::new(),
             version,

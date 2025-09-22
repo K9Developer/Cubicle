@@ -1,7 +1,9 @@
 use crate::models::block_entity::block_entity::GenericBlockEntity;
 use crate::models::other::mojang_data::text_component::TextComponent;
 use crate::models::other::tick::Tick;
+use crate::traits::block_entity::BlockEntityTrait;
 
+#[derive(Debug)]
 pub struct CommandBlockBlockEntity {
     base: GenericBlockEntity,
 
@@ -58,4 +60,10 @@ impl CommandBlockBlockEntity {
     pub fn set_success_count(&mut self, success_count: i32) { self.success_count = success_count; }
     pub fn set_is_keep_last_output(&mut self, is_keep_last_output: bool) { self.is_keep_last_output = is_keep_last_output; }
     pub fn set_is_update_last_executed(&mut self, is_update_last_executed: bool) { self.is_update_last_executed = is_update_last_executed; }
+}
+
+impl BlockEntityTrait for CommandBlockBlockEntity {
+    fn base(&self) -> &GenericBlockEntity {
+        &self.base
+    }
 }

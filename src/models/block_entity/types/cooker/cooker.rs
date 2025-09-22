@@ -1,13 +1,23 @@
+use crate::models::block_entity::block_entity::GenericBlockEntity;
 use crate::models::block_entity::types::cooker::types::brewing_stand::BrewingStandBlockEntity;
 use crate::models::block_entity::types::cooker::types::campfire::CampfireBlockEntity;
 use crate::models::block_entity::types::cooker::types::furnace::FurnaceBlockEntity;
 use crate::models::other::inventory::Item;
+use crate::traits::block_entity::BlockEntityTrait;
 
 // furnace, smoker, blast furnace, campfire, soul campfire, brewing stand
+#[derive(Debug)]
 pub enum CookerBlockEntity {
     Furnace(FurnaceBlockEntity),
     Campfire(CampfireBlockEntity),
     BrewingStand(BrewingStandBlockEntity),
+}
+
+impl BlockEntityTrait for CookerBlockEntity {
+    fn base(&self) -> &GenericBlockEntity {
+        let this = self as &dyn BlockEntityTrait;
+        this.base()
+    }
 }
 
 impl CookerBlockEntity {

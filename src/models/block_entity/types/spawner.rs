@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 use fastnbt::Value;
 use crate::models::block_entity::block_entity::GenericBlockEntity;
+use crate::models::block_entity::prelude::lectern::LecternBlockEntity;
 use crate::models::entity::entity::Entity;
 use crate::models::other::tick::Tick;
+use crate::traits::block_entity::BlockEntityTrait;
 
+#[derive(Debug)]
 struct LightLimitRange {
     pub min_inclusive: i32,
     pub max_inclusive: i32,
@@ -19,11 +22,13 @@ impl LightLimitRange {
     }
 }
 
+#[derive(Debug)]
 pub struct CustomSpawnRules {
     block_light_range: LightLimitRange,
     sky_light_range: LightLimitRange,
 }
 
+#[derive(Debug)]
 struct EquipmentDropChances {
     feet: f32,
     legs: f32,
@@ -34,22 +39,26 @@ struct EquipmentDropChances {
     offhand: f32
 }
 
+#[derive(Debug)]
 pub struct SpawnEquipment {
     loot_table: String, // TODO: Load the loot table and have it as a ref in a generalized structure
     drop_chances: EquipmentDropChances
 }
 
+#[derive(Debug)]
 pub struct SpawnerSpawnData {
     entity: Entity,
     spawn_rules: Option<CustomSpawnRules>,
     equipment: SpawnEquipment
 }
 
+#[derive(Debug)]
 struct SpawnPotential {
     weight: i32,
     data: SpawnerSpawnData
 }
 
+#[derive(Debug)]
 pub struct SpawnerBlockEntity {
     base: GenericBlockEntity,
 
@@ -91,7 +100,6 @@ impl SpawnerBlockEntity {
         }
     }
 
-    pub fn base(&self) -> &GenericBlockEntity { &self.base }
     pub fn ticks_until_next_spawn(&self) -> &Tick { &self.ticks_until_next_spawn }
     pub fn max_nearby_entities(&self) -> i16 { self.max_nearby_entities }
     pub fn max_spawn_delay(&self) -> Tick { self.max_spawn_delay }
@@ -114,4 +122,10 @@ impl SpawnerBlockEntity {
     pub fn add_potential(&mut self, spawn_potential: SpawnPotential) { self.spawn_potentials.push(spawn_potential); }
     pub fn remove_potential(&mut self, ind: usize) { self.spawn_potentials.remove(ind); }
     pub fn clear_potentials(&mut self) { self.spawn_potentials.clear(); }
+}
+
+impl BlockEntityTrait for SpawnerBlockEntity {
+    fn base(&self) -> &GenericBlockEntity {
+        &self.base
+    }
 }

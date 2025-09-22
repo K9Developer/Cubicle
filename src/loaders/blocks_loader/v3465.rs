@@ -239,7 +239,7 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
         let chunk_data = handle_chunk_compression(compression_type, data)?;
         let mut chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");
 
-        let mut chunk = Chunk::new(
+        let mut chunk = Chunk::with_store_capacity(
             self.version.clone(),
             ChunkPosition::new(
                 chunk_nbt.x_pos,
@@ -250,6 +250,10 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
             Tick::new(chunk_nbt.inhabited_time as usize),
             Tick::new(chunk_nbt.last_update as usize),
             chunk_nbt.status.clone(),
+
+            chunk_nbt.sections.len() * 20, // expected avg amount - can be optimized
+            3, // expected avg amount - can be optimized
+            chunk_nbt.block_entities.len()
         );
 
         let dim = chunk.position().dimension().to_string();

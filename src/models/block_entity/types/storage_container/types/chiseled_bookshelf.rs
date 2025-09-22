@@ -3,8 +3,9 @@ use crate::models::block_entity::types::storage_container::types::hopper::Hopper
 use crate::models::block_entity::types::storage_container::types::standard_container::StandardStorageContainerBlockEntity;
 use crate::models::other::inventory::Inventory;
 use crate::models::other::mojang_data::text_component::TextComponent;
-use crate::traits::block_entity::{LockableContainer, StorageContainerTrait};
+use crate::traits::block_entity::{BlockEntityTrait, LockableContainer, StorageContainerTrait};
 
+#[derive(Debug)]
 pub struct ChiseledBookshelfBlockEntity {
     base: StandardStorageContainerBlockEntity, // this doesnt have a custom name so its a waste but better DX
     last_interacted_slot: i32
@@ -23,10 +24,13 @@ impl ChiseledBookshelfBlockEntity {
 }
 
 impl StorageContainerTrait for ChiseledBookshelfBlockEntity {
-    fn base(&self) -> &GenericBlockEntity { &self.base.base() }
     fn items(&self) -> &Inventory { &self.base.items() }
     fn items_mut(&mut self) -> &mut Inventory { self.base.items_mut() }
     fn set_items(&mut self, items: Inventory) { self.base.set_items(items); }
+}
+
+impl BlockEntityTrait for ChiseledBookshelfBlockEntity {
+    fn base(&self) -> &GenericBlockEntity { &self.base.base() }
 }
 
 impl LockableContainer for ChiseledBookshelfBlockEntity {

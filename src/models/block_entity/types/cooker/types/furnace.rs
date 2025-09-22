@@ -3,8 +3,9 @@ use crate::models::block_entity::block_entity::GenericBlockEntity;
 use crate::models::other::inventory::{Inventory, Item};
 use crate::models::other::mojang_data::text_component::TextComponent;
 use crate::models::other::tick::Tick;
-use crate::traits::block_entity::LockableContainer;
+use crate::traits::block_entity::{BlockEntityTrait, LockableContainer};
 
+#[derive(Debug)]
 pub struct FurnaceBlockEntity {
     base: GenericBlockEntity,
     items: Inventory,
@@ -34,7 +35,6 @@ impl FurnaceBlockEntity {
         }
     }
 
-    pub fn base(&self) -> &GenericBlockEntity { &self.base }
     pub fn items(&self) -> &Inventory { &self.items }
     pub fn cook_history(&self) -> &HashMap<String, u32> { &self.cook_history }
     pub fn current_fuel_ticks_left(&self) -> &Tick { &self.current_fuel_ticks_left }
@@ -46,6 +46,10 @@ impl FurnaceBlockEntity {
     pub fn fuel_item(&self) -> Option<&Item> { self.items.get_at(1) }
     pub fn cooking_item(&self) -> Option<&Item> { self.items.get_at(0) }
     pub fn result_item(&self) -> Option<&Item> { self.items.get_at(2) }
+}
+
+impl BlockEntityTrait for FurnaceBlockEntity {
+    fn base(&self) -> &GenericBlockEntity { &self.base }
 }
 
 impl LockableContainer for FurnaceBlockEntity {

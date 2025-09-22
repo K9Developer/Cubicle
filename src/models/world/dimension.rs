@@ -21,11 +21,11 @@ pub struct Dimension {
 impl Dimension {
     pub fn new(dimension_id: String, version: Arc<Version>) -> Dimension {
         Dimension {
-            entity_store: EntityStore::new(&dimension_id),
+            entity_store: EntityStore::new(),
+            structure_store: StructureStore::new(),
             dimension_id,
             version,
             chunks: HashMap::new(),
-            structure_store: StructureStore::new(),
         }
     }
 

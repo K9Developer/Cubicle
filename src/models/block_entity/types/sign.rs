@@ -1,8 +1,11 @@
 use crate::constants::constants::MAX_SIGN_LINE_COUNT;
 use crate::models::block_entity::block_entity::GenericBlockEntity;
+use crate::models::block_entity::prelude::lectern::LecternBlockEntity;
 use crate::models::other::mojang_data::color::MinecraftColor;
 use crate::models::other::mojang_data::text_component::TextComponent;
+use crate::traits::block_entity::BlockEntityTrait;
 
+#[derive(Debug)]
 pub struct SignTextBlock {
     is_glowing_text: bool,
     dyed_color: MinecraftColor,
@@ -18,6 +21,7 @@ impl SignTextBlock {
 }
 
 // sign, hanging sign
+#[derive(Debug)]
 pub struct SignBlockEntity {
     base: GenericBlockEntity,
     is_waxed: bool,
@@ -37,7 +41,6 @@ impl SignBlockEntity {
         }
     }
 
-    pub fn base(&self) -> &GenericBlockEntity { &self.base }
     pub fn is_waxed(&self) -> &bool { &self.is_waxed }
     pub fn front_text(&self) -> &SignTextBlock { &self.front_text }
     pub fn back_text(&self) -> &SignTextBlock { &self.back_text }
@@ -58,4 +61,10 @@ impl SignBlockEntity {
     pub fn clear_front(&mut self) { self.front_text.lines.clear(); }
     pub fn clear_back(&mut self) { self.back_text.lines.clear(); }
     pub fn clear_all(&mut self) { self.clear_front(); self.clear_back(); }
+}
+
+impl BlockEntityTrait for SignBlockEntity {
+    fn base(&self) -> &GenericBlockEntity {
+        &self.base
+    }
 }

@@ -9,8 +9,11 @@ pub trait LockableContainer {
 }
 
 pub trait StorageContainerTrait {
-    fn base(&self) -> &GenericBlockEntity;
     fn items(&self) -> &Inventory;
     fn items_mut(&mut self) -> &mut Inventory;
     fn set_items(&mut self, items: Inventory);
+}
+
+pub trait BlockEntityTrait {
+    fn base(&self) -> &GenericBlockEntity;
 }

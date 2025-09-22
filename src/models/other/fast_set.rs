@@ -10,6 +10,7 @@ impl<T: Eq> FastSet<T> {
     pub fn new() -> FastSet<T> {
         FastSet { data: Vec::new() }
     }
+    pub fn with_capacity(capacity: usize) -> FastSet<T> { FastSet { data: Vec::with_capacity(capacity) } }
 
     pub fn insert(&mut self, v: T) -> usize {
         if let Some(i) = self.data.iter().position(|x| x == &v) {

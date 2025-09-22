@@ -6,7 +6,9 @@ use crate::models::block_entity::types::spawner::SpawnerBlockEntity;
 use crate::models::block_entity::types::storage_container::storage_container::StorageContainerBlockEntity;
 use crate::models::other::properties::Properties;
 use crate::models::positions::whole_position::Position;
+use crate::traits::block_entity::BlockEntityTrait;
 
+#[derive(Debug)]
 pub struct GenericBlockEntity {
     id: String,
     position: Position,
@@ -30,6 +32,7 @@ impl GenericBlockEntity {
     pub fn set_id(&mut self, id: String) { self.id = id }
 }
 
+#[derive(Debug)]
 pub enum BlockEntity {
     StorageContainer(StorageContainerBlockEntity),
     Cooker(CookerBlockEntity),
@@ -38,4 +41,11 @@ pub enum BlockEntity {
     CommandBlock(CommandBlockBlockEntity),
     Sign(SignBlockEntity),
     Other(GenericBlockEntity)
+}
+
+impl BlockEntityTrait for BlockEntity {
+    fn base(&self) -> &GenericBlockEntity {
+        let this = self as &dyn BlockEntityTrait;
+        this.base()
+    }
 }
