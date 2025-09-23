@@ -3,20 +3,21 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::sync::Arc;
 use crate::constants::constants::BIOME_CELL_SIZE;
 use crate::constants::versions::Version;
+use crate::models::other::lasso_string::LassoString;
 
 #[derive(Debug, Clone)]
 pub struct Position {
     x: i32,
     y: i32,
     z: i32,
-    dimension: String
+    dimension: LassoString
 }
 impl Position {
-    pub fn new(dimension: &str, x: i32, y: i32, z: i32) -> Self {
-        Self { x, y, z, dimension: dimension.into() }
+    pub fn new(dimension: LassoString, x: i32, y: i32, z: i32) -> Self {
+        Self { x, y, z, dimension }
     }
 
-    pub fn from_index(index: i32, dimension: &str, chunk_position: Position, version: &Version) -> Position {
+    pub fn from_index(index: i32, dimension: LassoString, chunk_position: Position, version: &Version) -> Position {
         let layer_size = version.data.chunk_size*version.data.chunk_size;
         let y = index / layer_size + version.data.lowest_y;
         let rest = index % layer_size;
@@ -25,7 +26,7 @@ impl Position {
         Position::new(dimension, x as i32, y as i32, z as i32)
     }
 
-    pub fn dimension(&self) -> &str { &self.dimension }
+    pub fn dimension(&self) -> &LassoString { &self.dimension }
     pub fn x(&self) -> i32 { self.x }
     pub fn y(&self) -> i32 { self.y }
     pub fn z(&self) -> i32 { self.z }
@@ -41,24 +42,22 @@ impl Position {
     }
 
     #[inline]
-    pub fn to_index(&self, version: Arc<Version>) -> usize {
-        let chunk_size = version.data.chunk_size;
+    pub fn to_index(&self, chunk_size: i32, lowest_y: i32) -> usize {
         if self.x() > chunk_size || self.z() > chunk_size { panic!("Chunk size out of range"); }
-        let height = self.y() + version.data.lowest_y.abs();
+        let height = self.y() + lowest_y.abs();
         (height * chunk_size * chunk_size + self.x() * chunk_size + self.z()) as usize
     }
 
     #[inline]
-    pub fn to_biome_index(&self, version: Arc<Version>) -> usize {
-        let chunk_size = version.data.chunk_size;
+    pub fn to_biome_index(&self, chunk_size: i32, lowest_y: i32) -> usize {
         let chunk_biome_size = chunk_size / BIOME_CELL_SIZE;
         if self.x() > chunk_size || self.z() > chunk_size { panic!("Chunk size out of range"); }
-        let height = (version.data.lowest_y.abs() / BIOME_CELL_SIZE) + self.y() / BIOME_CELL_SIZE;
+        let height = (lowest_y.abs() / BIOME_CELL_SIZE) + self.y() / BIOME_CELL_SIZE;
         (height * chunk_biome_size * chunk_biome_size + self.z() * chunk_biome_size + self.x()) as usize
     }
 
     pub fn to_block_coords(&self, chunk_size: i32) -> Position {
-        Position::new(self.dimension(), self.x() * chunk_size, self.y() * chunk_size, self.z() * chunk_size)
+        Position::new(self.dimension().clone(), self.x() * chunk_size, self.y() * chunk_size, self.z() * chunk_size)
     }
 
     pub fn to_chunk_ref(&self) -> i64 {
@@ -110,6 +109,12 @@ impl SubAssign<(i32, i32, i32)> for Position {
 
 impl From<(i32, i32, i32, &str)> for Position {
     fn from(t: (i32, i32, i32, &str)) -> Self {
+        Position::new(t.3.into(), t.0, t.1, t.2)
+    }
+}
+
+impl From<(i32, i32, i32, LassoString)> for Position {
+    fn from(t: (i32, i32, i32, LassoString)) -> Self {
         Position::new(t.3, t.0, t.1, t.2)
     }
 }

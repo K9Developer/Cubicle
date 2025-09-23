@@ -64,38 +64,84 @@ TODO: Some blocks have some props in BlockEntity and some in the PaletteBlock...
 fn main() {
 
     // Create world object
-    let world_path = "...";
+    let world_path = "C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test";
     let version = VersionManager::get("1.20.1", WorldKind::Singleplayer);
     let world = World::new(world_path.parse().unwrap(), version);
 
     // Register all regions and parse the region at 0 0
     world.with(|w| {
-        let region_position = RegionPosition::new(0, 0, "overworld");
+        let region_position = RegionPosition::new(0, 0, "overworld".into());
 
         w.register_regions();
+        let s = Instant::now();
         w.load_region(region_position);
+        let e = s.elapsed();
+        println!("Took {:?}", e)
     });
 
 
     // Create a filter that will catch stone blocks that their X value is <= than 3
-    let block_filter = Filter::And(vec![
-        Filter::Compare(FilterKey::ID, FilterOperation::Equals, "minecraft:stone".into()),
-        Filter::Compare(FilterKey::X_POSITION, FilterOperation::LessThanEquals, 3.into()),
-    ]);
-
-   world.with(|w| {
-
-       // Create selection of world (this way we edit and do more complicated operations on worlds)
-       let mut selection = w.select();
-
-       // Find the blocks using the filter and a callback
-       selection.find_blocks(block_filter, |mut matching_block| {
-
-           // Set the matching block to a redstone block and commit the changes to the world
-           matching_block.set_id("minecraft:redstone_block");
-           matching_block.commit();
-           true
-       });
-   })
+   //  let block_filter = Filter::And(vec![
+   //      Filter::Compare(FilterKey::ID, FilterOperation::Equals, "minecraft:stone".into()),
+   //      Filter::Compare(FilterKey::X_POSITION, FilterOperation::LessThanEquals, 3.into()),
+   //  ]);
+   //
+   // world.with(|w| {
+   //
+   //     // Create selection of world (this way we edit and do more complicated operations on worlds)
+   //     let mut selection = w.select();
+   //
+   //     // Find the blocks using the filter and a callback
+   //     selection.find_blocks(block_filter, |mut matching_block| {
+   //
+   //         // Set the matching block to a redstone block and commit the changes to the world
+   //         matching_block.set_id("minecraft:redstone_block");
+   //         matching_block.commit();
+   //         true
+   //     });
+   // })
 }
 
+/*
+TODO: Parse block entities
+TODO: Allocate an arena and then chunk will use that. Somehow compress chunk. Each region is around 100 MB
+TODO: NOW. use redeo with struct:
+
+struct LassoString {
+    string_key: ...
+}
+
+impl LassoString {
+    fn get() -> &str { rodeo.resolve(string_key) }
+    fn to_string() -> get()
+}
+
+then replace all dimension IDs with this.
+
+use lasso::{Rodeo, Spur};
+use once_cell::unsync::Lazy;
+
+// Global Rodeo, created on first use
+static INTERNER: Lazy<Rodeo<Spur>> = Lazy::new(|| Rodeo::new());
+
+// Intern a string and get a key
+pub fn intern(s: &str) -> Spur {
+    INTERNER.get_or_intern(s)
+}
+
+// Resolve a key back into &str
+pub fn resolve(sym: Spur) -> &'static str {
+    // SAFETY: Rodeo keeps strings alive for its whole lifetime,
+    // and INTERNER is 'static, so this is safe.
+    unsafe { std::mem::transmute::<&str, &'static str>(INTERNER.resolve(&sym)) }
+}
+
+fn main() {
+    let k1 = intern("abcdefghij");
+    let k2 = intern("abcdefghij");
+
+    assert_eq!(k1, k2);
+    println!("Resolved: {}", resolve(k1));
+}
+
+*/

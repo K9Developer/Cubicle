@@ -1,4 +1,5 @@
 use fastnbt::Value;
+use crate::models::other::lasso_string::LassoString;
 use crate::models::other::properties::Properties;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::positions::whole_position::Position;
@@ -51,7 +52,7 @@ impl GenericChildStructure {
 }
 
 impl BoundingBox {
-    pub fn from_BB(bb_list: Value, dimension: &str) -> BoundingBox {
+    pub fn from_BB(bb_list: Value, dimension: LassoString) -> BoundingBox {
         if let Value::IntArray(bb_list) = bb_list {
             let bb_list: &[i32] = &*bb_list;
             BoundingBox {

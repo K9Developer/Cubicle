@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use crate::constants::versions::Version;
 use crate::loaders::loader::Loader;
+use crate::models::other::lasso_string::LassoString;
 use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
 use crate::models::positions::chunk_position::ChunkPosition;
@@ -21,7 +22,7 @@ pub struct World<'a> {
     version: Arc<Version>,
     loader: Loader<'a>,
 
-    dimensions: HashMap<String, Dimension>,
+    dimensions: HashMap<LassoString, Dimension>,
     unloaded_regions: Vec<Region>,
 
     self_ref: Option<WorldType<'a>>
@@ -53,9 +54,9 @@ impl<'a> World<'a> {
         arc
     }
 
-    pub fn dimensions(&self) -> &HashMap<String, Dimension> { &self.dimensions }
-    pub fn dimension(&self, name: &str) -> Option<&Dimension> { self.dimensions.get(name) }
-    pub fn dimension_mut(&mut self, name: &str) -> Option<&mut Dimension> { self.dimensions.get_mut(name) }
+    pub fn dimensions(&self) -> &HashMap<LassoString, Dimension> { &self.dimensions }
+    pub fn dimension(&self, name: &LassoString) -> Option<&Dimension> { self.dimensions.get(name) }
+    pub fn dimension_mut(&mut self, name: &LassoString) -> Option<&mut Dimension> { self.dimensions.get_mut(name) }
     pub fn seed(&self) -> u64 { self.seed }
     pub fn path(&self) -> &PathBuf { &self.path }
     pub fn loader(&self) -> &Loader<'a> { &self.loader }
@@ -66,17 +67,17 @@ impl<'a> World<'a> {
     }
 
     pub fn set_seed(&mut self, seed: u64) { self.seed = seed; }
-    pub fn set_dimension(&mut self, name: String, dimension: Dimension) { self.dimensions.insert(name, dimension); }
+    pub fn set_dimension(&mut self, name: LassoString, dimension: Dimension) { self.dimensions.insert(name, dimension); }
     pub fn set_unloaded_regions(&mut self, unloaded_regions: Vec<Region>) { self.unloaded_regions = unloaded_regions }
 
     pub fn set_chunk(&mut self, position: ChunkPosition, block: FullBlock) -> Option<ChunkType> {
         let chunk = Chunk::new(
-            self.version.clone(),
             position,
             self.version.data.version_data,
             Tick::new(0),
             Tick::new(0),
             "minecraft:full".to_string(),
+            &self.version
         );
 
         match self.dimension_mut(chunk.position().dimension()) {
@@ -102,9 +103,9 @@ impl<'a> World<'a> {
         self.unloaded_regions.extend(self.loader().entity_loader().get_region_files(self.path.clone()));
 
         self.dimensions = HashMap::from([ //TODO: Dont hardcode this
-            ("overworld".to_string(), Dimension::new("overworld".to_string(), self.version.clone())),
-            ("the_nether".to_string(), Dimension::new("the_nether".to_string(), self.version.clone())),
-            ("the_end".to_string(), Dimension::new("the_end".to_string(), self.version.clone()))
+            ("overworld".into(), Dimension::new("overworld".into(), self.version.clone())),
+            ("the_nether".into(), Dimension::new("the_nether".into(), self.version.clone())),
+            ("the_end".into(), Dimension::new("the_end".into(), self.version.clone()))
         ]
         );
         self.unloaded_regions.len()

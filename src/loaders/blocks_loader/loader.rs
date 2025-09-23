@@ -5,6 +5,7 @@ use crate::models::other::region::Region;
 use crate::models::world::chunk::Chunk;
 use std::path::PathBuf;
 use std::sync::Arc;
+use crate::models::other::lasso_string::LassoString;
 use crate::models::world_structures::generic_structure::GenericParentStructure;
 // TODO: Add more funcs and lazy loading like empty_load all regions so we get metadata of all chunks and we can count them, etc. - Think of a system later
 
@@ -15,7 +16,7 @@ pub trait BlockLoader<'a> {
         &self,
         data: Vec<u8>,
         compression_type: u8,
-        dimension: &str,
+        dimension: &LassoString,
     ) -> Option<(Chunk, Vec<GenericParentStructure>)>;
 }
 

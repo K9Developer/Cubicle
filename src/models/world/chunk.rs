@@ -27,27 +27,26 @@ pub struct Chunk {
     entity_keys: Vec<EntityStoreKey>,
 
     structures: Vec<StructureStoreReference>,
-
-    version: Arc<Version>,
 }
 
 impl Chunk {
     pub fn new(
-        version: Arc<Version>,
         position: ChunkPosition,
         data_version: i32,
         inhabited_time: Tick,
         last_update: Tick,
         status: String,
+
+        version: &Arc<Version>
     ) -> Self {
         Chunk::with_store_capacity(
-            version, position, data_version, inhabited_time, last_update, status,
-            20*16, 2, 20 // those numbers are random and can be optimized
+            position, data_version, inhabited_time, last_update, status,
+            20*16, 2, 20, // those numbers are random and can be optimized
+            version,
         )
     }
 
     pub fn with_store_capacity(
-        version: Arc<Version>,
         position: ChunkPosition,
         data_version: i32,
         inhabited_time: Tick,
@@ -57,6 +56,8 @@ impl Chunk {
         block_store_palette_capacity: usize,
         biome_store_palette_capacity: usize,
         block_entity_capacity: usize,
+
+        version: &Arc<Version>,
     ) -> Self {
         Chunk {
 
@@ -66,21 +67,17 @@ impl Chunk {
             last_update,
             status,
 
-            block_store: BlockStore::with_palette_capacity(version.clone(), block_store_palette_capacity),
-            biome_store: BiomeStore::with_palette_capacity(version.clone(), biome_store_palette_capacity),
+            block_store: BlockStore::with_palette_capacity(version.data.chunk_size, version.data.lowest_y, version.data.highest_y, block_store_palette_capacity),
+            biome_store: BiomeStore::with_palette_capacity(version.data.chunk_size, version.data.lowest_y, version.data.highest_y, biome_store_palette_capacity),
             block_entities: BlockEntityStore::with_capacity(block_entity_capacity),
             heightmap_store: HeightmapStore::new(version.clone()),
             tile_ticks: Vec::new(),
-            version,
 
             entity_keys: Vec::new(),
             structures: Vec::new(),
         }
     }
 
-    pub fn version(&self) -> &Version {
-        &self.version
-    }
     pub fn position(&self) -> &ChunkPosition {
         &self.position
     }

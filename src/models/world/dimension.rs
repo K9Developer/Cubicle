@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::constants::versions::Version;
+use crate::models::other::lasso_string::LassoString;
 use crate::models::stores::entity_store::{EntityStore, EntityStoreKey};
 use crate::models::world::chunk::Chunk;
 use crate::models::stores::structure_store::StructureStore;
@@ -9,7 +10,7 @@ use crate::models::world::world::World;
 use crate::types::{ChunkType, WorldType};
 
 pub struct Dimension {
-    dimension_id: String,
+    dimension_id: LassoString,
     version: Arc<Version>,
 
     chunks: HashMap<(i32,i32), ChunkType>,
@@ -19,7 +20,7 @@ pub struct Dimension {
 }
 
 impl Dimension {
-    pub fn new(dimension_id: String, version: Arc<Version>) -> Dimension {
+    pub fn new(dimension_id: LassoString, version: Arc<Version>) -> Dimension {
         Dimension {
             entity_store: EntityStore::new(),
             structure_store: StructureStore::new(),

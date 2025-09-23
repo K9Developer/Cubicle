@@ -22,7 +22,7 @@ impl<'a> FullBlock<'a> {
             name: "minecraft:air".to_string(),
             extra: Properties::new(HashMap::new()),
             null_flag: false,
-            position: Position::new("minecraft:overworld", 0, 0, 0),
+            position: Position::new("overworld".into(), 0, 0, 0),
             world_ref: world_ref.clone(),
         }
     }

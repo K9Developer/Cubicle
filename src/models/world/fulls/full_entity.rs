@@ -1,27 +1,28 @@
 use std::fmt;
 use std::fmt::Debug;
 use crate::models::entity::entity::Entity;
+use crate::models::other::lasso_string::LassoString;
 use crate::models::stores::entity_store::EntityStoreKey;
 use crate::types::{WorldType};
 
 pub struct FullEntity<'a> {
     entity: Entity,
     world_ref: WorldType<'a>,
-    dimension_id: String,
+    dimension_id: LassoString,
     entity_key: EntityStoreKey
 }
 impl<'a> FullEntity<'a> {
-    pub fn new(world_ref: &WorldType<'a>, entity_key: EntityStoreKey, dimension_id: &str) -> Self {
+    pub fn new(world_ref: &WorldType<'a>, entity_key: EntityStoreKey, dimension_id: LassoString) -> Self {
         let entity: Entity = {
             let mut w = world_ref.lock().unwrap();
-            let mut dim = w.dimension_mut(dimension_id).unwrap();
+            let mut dim = w.dimension_mut(&dimension_id).unwrap();
             (*dim.entity_store_mut().get(entity_key)).clone()
         };
 
         Self {
-            entity: entity,
+            entity,
             world_ref: world_ref.clone(),
-            dimension_id: dimension_id.to_string(),
+            dimension_id,
             entity_key
         }
     }
@@ -31,7 +32,7 @@ impl<'a> FullEntity<'a> {
 
     pub fn remove(&self) -> bool {
         let mut world = self.world_ref.lock().unwrap();
-        match world.dimension_mut(self.dimension_id.as_str()) {
+        match world.dimension_mut(&self.dimension_id) {
             Some(dim) => {
                 dim.entity_store_mut().remove(&self.entity_key);
                 true
@@ -42,7 +43,7 @@ impl<'a> FullEntity<'a> {
 
     pub fn commit(&self) -> bool {
         let mut world = self.world_ref.lock().unwrap();
-        match world.dimension_mut(self.dimension_id.as_str()) {
+        match world.dimension_mut(&self.dimension_id) {
             Some(dim) => {
                 dim.entity_store_mut().set(&self.entity_key, self.entity.clone())
             }

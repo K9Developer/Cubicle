@@ -12,7 +12,7 @@ use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Instant;
+use crate::models::other::lasso_string::LassoString;
 use crate::models::other::properties::Properties;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::positions::whole_position::Position;
@@ -121,14 +121,14 @@ impl BlockLoaderV3465 {
         }
     }
 
-    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, mut chunk_nbt: NBTChunk, dimension: String) {
+    unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, mut chunk_nbt: NBTChunk, dimension: &LassoString) {
         // tile ticks
         for bt in chunk_nbt.block_ticks {
-            let tile_tick = TileTick::new(Position::new(&dimension, bt.x, bt.y, bt.z), bt.priority, bt.time_until_tick, TileTickType::BLOCK);
+            let tile_tick = TileTick::new(Position::new(dimension.clone(), bt.x, bt.y, bt.z), bt.priority, bt.time_until_tick, TileTickType::BLOCK);
             chunk_obj.set_tile_tick(tile_tick);
         }
         for ft in chunk_nbt.fluid_ticks {
-            let tile_tick = TileTick::new(Position::new(&dimension, ft.x, ft.y, ft.z), ft.priority, ft.time_until_tick, TileTickType::FLUID);
+            let tile_tick = TileTick::new(Position::new(dimension.clone(), ft.x, ft.y, ft.z), ft.priority, ft.time_until_tick, TileTickType::FLUID);
             chunk_obj.set_tile_tick(tile_tick);
         }
 
@@ -171,7 +171,7 @@ impl BlockLoaderV3465 {
                 for child in nbt_children {
                     children.push(GenericChildStructure::new(
                         &*child.id,
-                        BoundingBox::from_BB(child.bounding_box, chunk_obj.position().dimension()),
+                        BoundingBox::from_BB(child.bounding_box, chunk_obj.position().dimension().clone()),
                         Properties::new(child.others)
                     ));
                 }
@@ -201,9 +201,9 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
 
         let mut regions = Vec::<Region>::new();
 
-        regions.extend(get_region_files_in_folder(&overworld_region_folder, "overworld", RegionType::Block));
-        regions.extend(get_region_files_in_folder(&nether_region_folder, "the_nether", RegionType::Block));
-        regions.extend(get_region_files_in_folder(&end_region_folder, "the_end", RegionType::Block));
+        regions.extend(get_region_files_in_folder(&overworld_region_folder, "overworld".into(), RegionType::Block));
+        regions.extend(get_region_files_in_folder(&nether_region_folder, "the_nether".into(), RegionType::Block));
+        regions.extend(get_region_files_in_folder(&end_region_folder, "the_end".into(), RegionType::Block));
 
         regions
     }
@@ -214,16 +214,18 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
         let mut chunks = Vec::with_capacity(parsed_chunks.len());
         let mut new_structures = HashMap::new();
 
-        for parsed_chunk in parsed_chunks {
-            let chunk_data = self.parse_chunk(
-                parsed_chunk.raw_bytes,
-                parsed_chunk.compression_type,
-                region.position.dimension(),
-            );
-            if let Some(chunk_data) = chunk_data {
-                let chunk_ref = chunk_data.0.position().reference();
-                chunks.push(chunk_data.0);
-                new_structures.entry(chunk_ref).or_insert_with(Vec::new).extend(chunk_data.1);
+        unsafe {
+            for parsed_chunk in parsed_chunks {
+                let chunk_data = self.parse_chunk(
+                    parsed_chunk.raw_bytes,
+                    parsed_chunk.compression_type,
+                    region.position.dimension(),
+                );
+                if let Some(chunk_data) = chunk_data {
+                    let chunk_ref = chunk_data.0.position().reference();
+                    chunks.push(chunk_data.0);
+                    new_structures.entry(chunk_ref).or_insert_with(Vec::new).extend(chunk_data.1);
+                }
             }
         }
         (chunks, new_structures)
@@ -233,18 +235,17 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
         &self,
         data: Vec<u8>,
         compression_type: u8,
-        dimension: &str,
+        dimension: &LassoString,
     ) -> Option<(Chunk, Vec<GenericParentStructure>)> {
 
         let chunk_data = handle_chunk_compression(compression_type, data)?;
         let mut chunk_nbt: NBTChunk = fastnbt::from_bytes(chunk_data.as_slice()).expect("Failed to parse chunk data");
 
         let mut chunk = Chunk::with_store_capacity(
-            self.version.clone(),
             ChunkPosition::new(
                 chunk_nbt.x_pos,
                 chunk_nbt.z_pos,
-                dimension,
+                dimension.clone(),
             ),
             chunk_nbt.data_version,
             Tick::new(chunk_nbt.inhabited_time as usize),
@@ -253,12 +254,14 @@ impl<'a> BlockLoader<'a> for BlockLoaderV3465 {
 
             chunk_nbt.sections.len() * 20, // expected avg amount - can be optimized
             3, // expected avg amount - can be optimized
-            chunk_nbt.block_entities.len()
+            chunk_nbt.block_entities.len(),
+
+            &self.version,
         );
 
-        let dim = chunk.position().dimension().to_string();
+        let dim_id = chunk.position().dimension().clone();
         let structures = self.populate_chunk_with_structures(&mut chunk, &mut chunk_nbt);
-        unsafe { self.populate_chunk_with_blocks(&mut chunk, chunk_nbt, dim); }
+        unsafe { self.populate_chunk_with_blocks(&mut chunk, chunk_nbt, &dim_id); }
         Some((chunk, structures))
     }
 }

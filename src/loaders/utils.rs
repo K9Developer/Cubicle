@@ -3,6 +3,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use flate2::read::ZlibDecoder;
 use crate::constants::constants::{MCA_REGION_LOCATION_SECTOR_ENTRY_SIZE, MCA_REGION_SECTOR_SIZE, ZLIB_COMPRESSION_TYPE};
+use crate::models::other::lasso_string::LassoString;
 use crate::models::other::region::{Region, RegionType};
 use crate::types::RegionPosition;
 
@@ -13,7 +14,7 @@ pub struct ParsedRegionChunk {
     pub compression_type: u8
 }
 
-pub fn get_region_files_in_folder(folder: &PathBuf, dimension_name: &str, region_type: RegionType) -> Vec<Region> {
+pub fn get_region_files_in_folder(folder: &PathBuf, dimension_name: LassoString, region_type: RegionType) -> Vec<Region> {
     if !folder.exists() {
         println!("{} does not exist, skipping...", folder.display());
         return Vec::new();

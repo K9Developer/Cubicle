@@ -12,25 +12,31 @@ use crate::traits::misc::store::StoreLike;
 pub struct BlockStore {
     palette: FastSet<PaletteBlock>,
     indices: Vec<usize>,
-    version: Arc<Version>,
+
+    chunk_size: i32,
+    lowest_y: i32
 }
 
 impl BlockStore {
-    pub fn new(version: Arc<Version>) -> BlockStore {
-        BlockStore::with_palette_capacity(version, 20) // 20 is a random number - could be optimized
+    pub fn new(chunk_size: i32, lowest_y: i32, highest_y: i32) -> BlockStore {
+        BlockStore::with_palette_capacity(chunk_size, lowest_y, highest_y, 20) // 20 is a random number - could be optimized
     }
 
-    pub fn with_palette_capacity(version: Arc<Version>, size: usize) -> BlockStore {
-        let height = (version.data.highest_y - version.data.lowest_y).abs();
-        let total_blocks = (version.data.chunk_size * version.data.chunk_size * height) as usize;
+    pub fn with_palette_capacity(chunk_size: i32, lowest_y: i32, highest_y: i32, size: usize) -> BlockStore {
+        let height = (highest_y - lowest_y).abs();
+        let total_blocks = (chunk_size * chunk_size * height) as usize;
 
         let mut p = FastSet::with_capacity(size);
         p.insert(PaletteBlock::new_null());
 
+        let mut v = Vec::with_capacity(total_blocks);
+        unsafe { v.set_len(total_blocks) };
+
         BlockStore {
             palette: p,
-            indices: vec![0usize; total_blocks],
-            version,
+            indices: v,
+
+            chunk_size, lowest_y
         }
     }
 
@@ -108,7 +114,7 @@ impl StoreLike<PaletteBlock> for BlockStore {
     }
 
     fn set_item_at_position(&mut self, relative_position: Position, block: PaletteBlock) -> bool {
-        let index = relative_position.to_index(self.version.clone());
+        let index = relative_position.to_index(self.chunk_size, self.lowest_y);
         self.set_item_at_index(index, block)
     }
 
@@ -120,7 +126,7 @@ impl StoreLike<PaletteBlock> for BlockStore {
     }
 
     fn get_item_at_position(&self, relative_position: Position) -> Option<PaletteBlock> {
-        let index = relative_position.to_index(self.version.clone());
+        let index = relative_position.to_index(self.chunk_size, self.lowest_y);
         self.get_item_at_index(index)
     }
 

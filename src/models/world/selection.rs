@@ -4,6 +4,7 @@ use std::sync::{Arc, MutexGuard};
 use crate::constants::versions::Version;
 use crate::models::entity::entity::Entity;
 use crate::models::filter::filter::Filter;
+use crate::models::other::lasso_string::LassoString;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::positions::whole_position::Position;
 use crate::models::world::fulls::full_block::FullBlock;
@@ -73,7 +74,7 @@ impl<'r, 'a> BlockReader<'a> for Selection<'r, 'a> {
                 if !callback(FullBlock::new_with_data(
                     &self.world_ref.get(),
                     b,
-                    Position::new(chunk_position.dimension(), world_chunk_position.0 + relative_pos.0, relative_pos.1, world_chunk_position.1 + relative_pos.2)
+                    Position::new(chunk_position.dimension().clone(), world_chunk_position.0 + relative_pos.0, relative_pos.1, world_chunk_position.1 + relative_pos.2)
                 )) { return; };
 
                 relative_pos.0 = relative_pos.0 + 1;
@@ -131,7 +132,7 @@ impl<'r, 'a> EntityReader for Selection<'r, 'a> {
     {
         let chunk_poses = self.cached_chunks.keys().cloned().collect::<Vec<_>>();
         for chunk_pos in chunk_poses {
-            let dim_id = chunk_pos.dimension().to_string();
+            let dim_id = chunk_pos.dimension().clone();
             let chunk = match self.lazy_get_chunk(chunk_pos) {
                 Some(c) => c,
                 None => continue,
@@ -142,7 +143,7 @@ impl<'r, 'a> EntityReader for Selection<'r, 'a> {
                     FullEntity::new(
                         &self.world_ref.get(),
                         entity_key.clone(),
-                        dim_id.as_str(),
+                        dim_id.clone(),
                     )
                 ) { return; }
             }
@@ -245,7 +246,7 @@ impl<'a, 'r> SelectionBuilder<'a, 'r> {
         self
     }
 
-    pub fn all_dimension_chunks(mut self, dimension: &str) -> Self {
+    pub fn all_dimension_chunks(mut self, dimension: &LassoString) -> Self {
         {
             let dim = self.underlying.world_ref.dimension(dimension);
             if dim.is_none() { panic!("Invalid dimension"); }
@@ -258,11 +259,8 @@ impl<'a, 'r> SelectionBuilder<'a, 'r> {
 
     pub fn all_chunks(mut self) -> Self {
         {
-            let dims: Vec<String> = self.underlying.world_ref.dimensions().keys().cloned().collect();
-
-            for dim in dims {
-                self = self.all_dimension_chunks(&dim);
-            }
+            let dims = self.underlying.world_ref.dimensions().keys().cloned().collect::<Vec<_>>();
+            for dim in dims { self = self.all_dimension_chunks(&dim); }
         }
         self
     }

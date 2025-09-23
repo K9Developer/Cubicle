@@ -6,7 +6,7 @@ use crate::utils::generic_utils::div_rem_nonzero;
 
 pub fn block_position_to_chunk_pos_and_block_index(pos: &Position, chunk_size: i32, min_y: i32) -> (ChunkPosition, usize) {
     let chunk_position = (pos.x().div_euclid(chunk_size), pos.z().div_euclid(chunk_size));
-    let cpos = ChunkPosition::new(chunk_position.0, chunk_position.1, pos.dimension());
+    let cpos = ChunkPosition::new(chunk_position.0, chunk_position.1, pos.dimension().clone());
 
     let local_x = pos.x().rem_euclid(16);
     let local_z = pos.z().rem_euclid(16);
@@ -33,7 +33,7 @@ pub fn block_index_to_block_position(chunk_pos: &ChunkPosition, index: usize, ch
 
     let (chunk_x, chunk_z) = chunk_position_to_world_position((chunk_pos.x(), chunk_pos.z()), chunk_size);
 
-    (chunk_x + local_x, actual_y, chunk_z + local_z, chunk_pos.dimension()).into()
+    (chunk_x + local_x, actual_y, chunk_z + local_z, chunk_pos.dimension().clone()).into()
 }
 
 pub fn is_position_within_bounding_box(position: &Position, corner1: &Position, corner2: &Position) -> bool {

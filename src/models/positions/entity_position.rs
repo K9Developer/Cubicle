@@ -1,25 +1,27 @@
+use crate::models::other::lasso_string::LassoString;
+
 #[derive(Debug, Clone)]
 pub struct EntityPosition {
     x: f64,
     y: f64,
     z: f64,
-    dimension: String,
+    dimension: LassoString,
     rot_yaw: f64,
     rot_pitch: f64,
 }
 
 
 impl EntityPosition {
-    pub fn new(x: f64, y: f64, z: f64, rot_yaw: f64, rot_pitch: f64, dimension: &str) -> Self {
+    pub fn new(x: f64, y: f64, z: f64, rot_yaw: f64, rot_pitch: f64, dimension: LassoString) -> Self {
         EntityPosition {
             x, y, z,
-            dimension: dimension.to_string(),
+            dimension,
             rot_yaw,
             rot_pitch
         }
     }
 
-    pub fn dimension(&self) -> &str { &self.dimension }
+    pub fn dimension(&self) -> &LassoString { &self.dimension }
     pub fn x(&self) -> f64 { self.x }
     pub fn y(&self) -> f64 { self.y }
     pub fn z(&self) -> f64 { self.z }

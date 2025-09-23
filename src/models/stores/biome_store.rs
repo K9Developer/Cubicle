@@ -1,8 +1,6 @@
 // biomes are kept as 4x4x4 cells in a chunk - BIOME_CELL_SIZE
 
-use std::sync::Arc;
 use crate::constants::constants::BIOME_CELL_SIZE;
-use crate::constants::versions::Version;
 use crate::models::other::fast_set::FastSet;
 use crate::models::positions::whole_position::Position;
 use crate::traits::misc::store::StoreLike;
@@ -12,7 +10,8 @@ pub struct BiomeStore {
     palette: FastSet<String>,
     indices: Vec<usize>,
 
-    version: Arc<Version>,
+    chunk_size: i32,
+    lowest_y: i32
 }
 
 impl StoreLike<String> for BiomeStore {
@@ -57,7 +56,7 @@ impl StoreLike<String> for BiomeStore {
         true
     }
     fn set_item_at_position(&mut self, relative_position: Position, biome: String) -> bool {
-        let index = relative_position.to_index(self.version.clone());
+        let index = relative_position.to_index(self.chunk_size, self.lowest_y);
         self.set_biome_at_index(index, biome)
     }
     fn get_item_at_index(&self, index: usize) -> Option<String> {
@@ -68,7 +67,7 @@ impl StoreLike<String> for BiomeStore {
         else { Some(biome.clone()) }
     }
     fn get_item_at_position(&self, relative_position: Position) -> Option<String> {
-        let index = relative_position.to_biome_index(self.version.clone());
+        let index = relative_position.to_biome_index(self.chunk_size, self.lowest_y);
         self.get_biome_at_index(index)
     }
     fn indices_slice(&self) -> &[usize] {
@@ -80,20 +79,26 @@ impl StoreLike<String> for BiomeStore {
 }
 
 impl BiomeStore {
-    pub fn new(version: Arc<Version>) -> Self {
-        BiomeStore::with_palette_capacity(version, 2) // 2 is a random number - could be optimized
+    pub fn new(chunk_size: i32, lowest_y: i32, highest_y: i32) -> BiomeStore {
+
+        BiomeStore::with_palette_capacity(chunk_size, lowest_y, highest_y, 3) // 3 is a random number - could be optimized
     }
 
-    pub fn with_palette_capacity(version: Arc<Version>, size: usize) -> Self {
-        let height = version.data.lowest_y.abs() + version.data.highest_y.abs();
-        let total_biomes = (version.data.chunk_size * version.data.chunk_size * height) / BIOME_CELL_SIZE.pow(3);
+    pub fn with_palette_capacity(chunk_size: i32, lowest_y: i32, highest_y: i32, size: usize) -> BiomeStore {
+        let height = lowest_y.abs() + highest_y.abs();
+        let total_biomes = (chunk_size * chunk_size * height) / BIOME_CELL_SIZE.pow(3);
+
         let mut p = FastSet::with_capacity(size);
         p.insert("cubicle:null".to_string());
 
-        Self {
-            version,
+        let mut v = Vec::with_capacity(total_biomes as usize);
+        unsafe { v.set_len(total_biomes as usize); }
+
+        BiomeStore {
             palette: p,
-            indices: vec![0usize; total_biomes as usize],
+            indices: v,
+
+            chunk_size, lowest_y
         }
     }
 
