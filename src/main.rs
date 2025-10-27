@@ -1,7 +1,6 @@
 use cubicle::constants::versions::{VersionManager};
 use cubicle::models::world::world::{World};
 use std::time::Instant;
-use serde::__private::de::IdentifierDeserializer;
 use cubicle::models::filter::comparable_value::ComparableValue;
 use cubicle::models::filter::filter::Filter;
 use cubicle::models::filter::filter_keys::FilterKey;
@@ -57,7 +56,7 @@ TODO: Allocate an arena and then chunk will use that. Somehow compress chunk. Ea
 TODO: Have some kind of config we can setup for version translations (what happens when situations)
 */
 
-fn main() {S
+fn main() {
 
     // Create world object
     let world_path = "C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test";

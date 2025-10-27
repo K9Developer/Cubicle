@@ -5,7 +5,7 @@ use crate::models::world::chunk::Chunk;
 use crate::models::world::world::World;
 
 pub type ChunkType = Arc<Mutex<Chunk>>;
-pub type WorldType<'a> = Arc<Mutex<Box<World<'a>>>>;
+pub type WorldType<'a> = Arc<Mutex<World<'a>>>;
 pub type RegionPosition = ChunkPosition;
 pub type ItemSlot = usize;
 

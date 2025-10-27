@@ -34,7 +34,7 @@ impl<'a> World<'a> {
     pub fn new(path: PathBuf, version: Arc<Version>) -> WorldType<'a> {
         let arc = Arc::new_cyclic(|weak_self| {
             Mutex::new(
-                Box::from(World {
+                World {
                     path,
                     seed: 0,
                     dimensions: HashMap::new(),
@@ -42,7 +42,7 @@ impl<'a> World<'a> {
                     loader: MainLoader::new(version.clone()),
                     version,
                     self_ref: None,
-                })
+                }
             )
         });
 
