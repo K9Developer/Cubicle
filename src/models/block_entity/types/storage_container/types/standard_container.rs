@@ -1,9 +1,10 @@
 use crate::models::block_entity::block_entity::GenericBlockEntity;
-use crate::models::block_entity::prelude::storage_container::types::hopper::HopperBlockEntity;
 use crate::models::other::inventory::Inventory;
 use crate::models::other::mojang_data::text_component::TextComponent;
 use crate::traits::block_entity::{BlockEntityTrait, LockableContainer, StorageContainerTrait};
 
+
+// TODO: loot table for chest - look in wiki
 #[derive(Debug)]
 pub struct StandardStorageContainerBlockEntity {
     base: GenericBlockEntity,
@@ -27,6 +28,9 @@ impl StandardStorageContainerBlockEntity {
 
 impl BlockEntityTrait for StandardStorageContainerBlockEntity {
     fn base(&self) -> &GenericBlockEntity { &self.base }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity {
+        &mut self.base
+    }
 }
 
 impl StorageContainerTrait for StandardStorageContainerBlockEntity {

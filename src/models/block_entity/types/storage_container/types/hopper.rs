@@ -1,5 +1,4 @@
 use crate::models::block_entity::block_entity::GenericBlockEntity;
-use crate::models::block_entity::prelude::storage_container::types::chiseled_bookshelf::ChiseledBookshelfBlockEntity;
 use crate::models::block_entity::types::storage_container::types::standard_container::StandardStorageContainerBlockEntity;
 use crate::models::other::inventory::Inventory;
 use crate::models::other::mojang_data::text_component::TextComponent;
@@ -28,6 +27,7 @@ impl HopperBlockEntity {
 
 impl BlockEntityTrait for HopperBlockEntity {
     fn base(&self) -> &GenericBlockEntity { &self.base.base() }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity { self.base.base_mut() }
 }
 
 impl StorageContainerTrait for HopperBlockEntity {

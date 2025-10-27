@@ -23,7 +23,7 @@ pub struct NBTChunk {
     pub status: String,
 
     pub sections: Vec<NBTSection>,
-    pub block_entities: Vec<NBTBlockEntity>,
+    pub block_entities: Vec<Option<NBTBlockEntity>>,
     pub fluid_ticks: Vec<NBTTileTick>,
     pub block_ticks: Vec<NBTTileTick>,
     pub structures: NBTStructureList,

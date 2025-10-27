@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use crate::constants::versions::Version;
-use crate::loaders::loader::Loader;
+use crate::loaders::loader::MainLoader;
 use crate::models::other::lasso_string::LassoString;
 use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
@@ -20,7 +20,7 @@ pub struct World<'a> {
     seed: u64,
 
     version: Arc<Version>,
-    loader: Loader<'a>,
+    loader: MainLoader<'a>,
 
     dimensions: HashMap<LassoString, Dimension>,
     unloaded_regions: Vec<Region>,
@@ -39,7 +39,7 @@ impl<'a> World<'a> {
                     seed: 0,
                     dimensions: HashMap::new(),
                     unloaded_regions: Vec::new(),
-                    loader: Loader::new(version.clone()),
+                    loader: MainLoader::new(version.clone()),
                     version,
                     self_ref: None,
                 })
@@ -59,7 +59,7 @@ impl<'a> World<'a> {
     pub fn dimension_mut(&mut self, name: &LassoString) -> Option<&mut Dimension> { self.dimensions.get_mut(name) }
     pub fn seed(&self) -> u64 { self.seed }
     pub fn path(&self) -> &PathBuf { &self.path }
-    pub fn loader(&self) -> &Loader<'a> { &self.loader }
+    pub fn loader(&self) -> &MainLoader<'a> { &self.loader }
     pub fn version(&self) -> Arc<Version> { self.version.clone() }
     pub fn get(&self) -> WorldType<'a> { self.self_ref.clone().unwrap() }
     pub fn select<'r>(&'r mut self) -> Selection<'r, 'a> {

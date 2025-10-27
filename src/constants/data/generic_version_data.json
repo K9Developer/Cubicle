@@ -6,6 +6,7 @@
   "1.20.1": {
     "lowest_y": -64,
     "highest_y": 320,
-    "version_data": 3465
+    "version_data": 3465,
+    "dynamic": null
   }
 }

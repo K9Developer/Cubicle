@@ -1,8 +1,7 @@
-use super::loader::BlockLoader;
 use crate::constants::constants::{BIOME_CELL_SIZE, ZLIB_COMPRESSION_TYPE};
 use crate::constants::versions::Version;
-use crate::loaders::utils::{get_region_files_in_folder, handle_chunk_compression, parse_region_file, uncompress_zlib};
-use crate::models::nbt_structures::v3465::regular::{NBTBlockPalette, NBTChunk, NBTSection};
+use crate::loaders::loader_utils::{get_region_files_in_folder, handle_chunk_compression, parse_region_file, uncompress_zlib};
+use crate::models::nbt_structures::v3465::regular::{NBTBlockEntity, NBTBlockPalette, NBTChunk, NBTSection};
 use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
 use crate::models::world::block::PaletteBlock;
@@ -12,11 +11,20 @@ use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use crate::{transmute_map, I32};
+use crate::loaders::block_loader::BlockLoader;
+use crate::loaders::v3465::utils::nbt_utils::{parse_nbt_item, parse_nbt_storage_container, parse_sign_text_block, parse_spawner_spawn_data, parse_spawner_spawn_potentials, take_bool, take_i16, take_i32, take_i32_vec, take_i8, take_inventory, take_list, take_long, take_map, take_string, take_text_component};
+use crate::models::block_entity::block_entity::BlockEntity;
+use crate::models::block_entity::prelude::*;
+use crate::models::block_entity::types::cooker::cooker::CookerBlockEntity;
+use crate::models::block_entity::types::lectern::LecternBlockEntity;
+use crate::models::block_entity::types::storage_container::storage_container::StorageContainerBlockEntity;
 use crate::models::other::lasso_string::LassoString;
 use crate::models::other::properties::Properties;
 use crate::models::positions::chunk_position::ChunkPosition;
 use crate::models::positions::whole_position::Position;
 use crate::models::stores::biome_store::BiomeStore;
+use crate::models::stores::block_entity_store::BlockEntityStore;
 use crate::models::stores::block_store::BlockStore;
 use crate::models::stores::heightmap_store::HeightmapStore;
 use crate::models::stores::structure_store::StructureStoreReference;
@@ -26,8 +34,8 @@ use crate::types::{HeightmapKind, WorldKind};
 use crate::utils::generic_utils::bit_length;
 // TODO: Support other dimensions (custom paths)
 
-pub(super) struct BlockLoaderV3465 {
-    pub(crate) version: Arc<Version>,
+pub struct BlockLoaderV3465 {
+    pub version: Arc<Version>,
 }
 
 impl BlockLoaderV3465 {
@@ -48,6 +56,8 @@ impl BlockLoaderV3465 {
             }
         }
     }
+
+
 
     unsafe fn parse_section_blocks(&self, section: NBTSection, block_store: &mut BlockStore, section_block_count: usize) {
         let Some(block_states) = section.block_states else {return};
@@ -121,6 +131,163 @@ impl BlockLoaderV3465 {
         }
     }
 
+    pub unsafe fn parse_block_entities(&self, mut block_entity_nbt: NBTBlockEntity, dimension:  &LassoString, store: &mut BlockEntityStore) {
+        let mut generic_be = GenericBlockEntity::new(
+            block_entity_nbt.id,
+            Position::new(dimension.clone(), block_entity_nbt.x, block_entity_nbt.y, block_entity_nbt.z),
+            Properties::new(HashMap::new())
+        );
+
+        // TODO: This is a bit too hardcoded (extensions should be able to affect this).
+        let props = &mut block_entity_nbt.others;
+        let mut final_be: BlockEntity;
+        match generic_be.id() {
+            // Storage Container
+            "minecraft:chest" | "minecraft:trapped_chest" | "minecraft:barrel" | "minecraft:shulker_box" => {
+                final_be = BlockEntity::StorageContainer(StorageContainerBlockEntity::Normal(
+                    parse_nbt_storage_container(generic_be, props, 27)
+                ));
+            },
+            "minecraft:dropper" | "minecraft:dispenser" => {
+                final_be = BlockEntity::StorageContainer(StorageContainerBlockEntity::Spitter(
+                    parse_nbt_storage_container(generic_be, props, 9)
+                ))
+            },
+            "minecraft:hopper" => {
+                final_be = BlockEntity::StorageContainer(StorageContainerBlockEntity::Hopper(
+                    HopperBlockEntity::new(
+                        parse_nbt_storage_container(generic_be, props, 5),
+                        take_i32(props, "TransferCooldown").unwrap_or(0)
+                    )
+                ))
+            },
+            "minecraft:chiseled_bookshelf" => {
+                final_be = BlockEntity::StorageContainer(StorageContainerBlockEntity::ChiseledBookshelf(
+                    ChiseledBookshelfBlockEntity::new(
+                        parse_nbt_storage_container(generic_be, props, 5),
+                        take_i32(props, "last_interacted_slot").unwrap_or(0)
+                    )
+                ))
+            },
+
+            // Cooker
+            "minecraft:furnace" | "minecraft:smoker" | "minecraft:blast_furnace" => {
+                let hist: Option<HashMap<String, i32>> = take_map(props, "RecipesUsed").and_then(|m| Some(transmute_map(m)));
+                final_be = BlockEntity::Cooker(CookerBlockEntity::Furnace(
+                    FurnaceBlockEntity::new(
+                        generic_be,
+                        take_inventory(props, "Items", 3),
+                        hist.unwrap_or_default(),
+                        take_string(props, "Lock"),
+                        take_text_component(props, "CustomName"),
+                        Tick::new(take_i16(props, "BurnTime").unwrap_or(0) as usize),
+                        Tick::new(take_i16(props, "CookTime").unwrap_or(0) as usize),
+                        Tick::new(take_i16(props, "CookTimeTotal").unwrap_or(0) as usize),
+                    )
+                ))
+            },
+            "minecraft:campfire" | "minecraft:soul_campfire" => {
+                let cooking_times = take_i32_vec(props, "CookingTimes").unwrap_or_default().iter().map(|&i| Tick::new(i as usize)).collect::<Vec<Tick>>();
+                let ticks_to_cook = take_i32_vec(props, "CookingTotalTimes").unwrap_or_default().iter().map(|&i| Tick::new(i as usize)).collect::<Vec<Tick>>();
+                final_be = BlockEntity::Cooker(CookerBlockEntity::Campfire(
+                    CampfireBlockEntity::new(
+                        generic_be,
+                        cooking_times,
+                        ticks_to_cook,
+                        take_inventory(props, "Items", 4),
+                    )
+                ))
+            },
+            "minecraft:brewing_stand" => {
+                final_be = BlockEntity::Cooker(CookerBlockEntity::BrewingStand(
+                    BrewingStandBlockEntity::new(
+                        generic_be,
+                        take_inventory(props, "Items", 5),
+                        Tick::new(take_i16(props, "BrewTime").unwrap_or(0) as usize),
+                        take_i8(props, "Fuel").unwrap_or(0),
+                        take_string(props, "Lock"),
+                        take_text_component(props, "CustomName"),
+                    )
+                ))
+            },
+
+            // Others
+            "minecraft:lectern" => {
+                final_be = BlockEntity::Lectern(
+                    LecternBlockEntity::new(
+                        generic_be,
+                        parse_nbt_item(take_map(props, "Book")).and_then(|a| Some(a.1)),
+                        take_i32(props, "Page").unwrap_or(0)
+                    )
+                )
+            }
+
+            "minecraft:spawner" => {
+                final_be = BlockEntity::Spawner(
+                    SpawnerBlockEntity::new(
+                        generic_be,
+                        Tick::new(take_i16(props, "Delay").unwrap_or(0) as usize),
+                        take_i16(props, "MaxNearbyEntities").unwrap_or(0),
+                        Tick::new(take_i16(props, "MaxSpawnDelay").unwrap_or(0) as usize),
+                        Tick::new(take_i16(props, "MinSpawnDelay").unwrap_or(0) as usize),
+                        take_i16(props, "RequiredPlayerRange").unwrap_or(0),
+                        take_i16(props, "SpawnCount").unwrap_or(0),
+                        take_i16(props, "SpawnRange").unwrap_or(0),
+                        parse_spawner_spawn_data(take_map(props, "SpawnData"), dimension),
+                        parse_spawner_spawn_potentials(take_list(props, "SpawnPotentials"), dimension).unwrap_or_default(),
+                    )
+                )
+            },
+
+            "minecraft:command_block" | "minecraft:repeating_command_block" | "minecraft:chain_command_block" => {
+                if let (Some(auto), Some(cmd), Some(cond_met), last_ex, lo,
+                        Some(pow), Some(succ), Some(to), Some(ule)) =
+                    (take_bool(props, "auto"), take_string(props, "Command"), take_bool(props, "conditionMet"),
+                     take_long(props, "LastExecution"), take_string(props, "LastOutput"), take_bool(props, "powered"),
+                     take_i32(props, "SuccessCount"), take_bool(props, "TrackOutput"), take_bool(props, "UpdateLastExecution")) {
+                    final_be = BlockEntity::CommandBlock(
+                        CommandBlockBlockEntity::new(
+                            generic_be,
+                            auto,
+                            cmd,
+                            cond_met,
+                            take_text_component(props, "CustomName"),
+                            Tick::new(last_ex.unwrap_or_default() as usize),
+                            lo.unwrap_or_default(),
+                            pow,
+                            succ,
+                            to,
+                            ule
+                        )
+                    )
+                } else {
+                    generic_be.set_properties(Properties::new(block_entity_nbt.others));
+                    store.add_unchecked(BlockEntity::Other(generic_be));
+                    return;
+                }
+            },
+
+            "minecraft:sign" | "minecraft:hanging_sign" => {
+                final_be = BlockEntity::Sign(
+                    SignBlockEntity::new(
+                        generic_be,
+                        take_bool(props, "is_waxed").unwrap_or(false),
+                        parse_sign_text_block(take_map(props, "front_text")),
+                        parse_sign_text_block(take_map(props, "back_text"))
+                    )
+                )
+            }
+
+            &_ => {
+                generic_be.set_properties(Properties::new(block_entity_nbt.others));
+                store.add_unchecked(BlockEntity::Other(generic_be));
+                return;
+            }
+        }
+        final_be.base_mut().set_properties(Properties::new(block_entity_nbt.others));
+        store.add_unchecked(final_be);
+    }
+
     unsafe fn populate_chunk_with_blocks(&self, chunk_obj: &mut Chunk, mut chunk_nbt: NBTChunk, dimension: &LassoString) {
         // tile ticks
         for bt in chunk_nbt.block_ticks {
@@ -132,10 +299,16 @@ impl BlockLoaderV3465 {
             chunk_obj.set_tile_tick(tile_tick);
         }
 
-        let (block_store, biome_store, heightmap_store) = chunk_obj.stores_mut();
-
+        let (block_store, biome_store, heightmap_store, block_entity_store) = chunk_obj.stores_mut();
         let section_block_count = (self.version.data.section_height * self.version.data.chunk_size * self.version.data.chunk_size) as usize;
         let section_biome_count = section_block_count / BIOME_CELL_SIZE.pow(3) as usize;
+
+        // block entities
+        for mut be in chunk_nbt.block_entities {
+            if let Some(be) = be.take() {
+                self.parse_block_entities(be, dimension, block_entity_store);
+            }
+        }
 
         // heightmaps
         self.parse_chunk_heightmaps(chunk_nbt.heightmaps.ocean_floor.take(), HeightmapKind::Ground, heightmap_store);

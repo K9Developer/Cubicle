@@ -2,44 +2,27 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::Arc;
-use fastnbt::Value;
-use super::loader::{EntityLoader};
 use crate::models::other::region::{Region, RegionType};
 use crate::models::nbt_structures::v3465::entities::{NBTChunk};
-use crate::constants::constants::{ZLIB_COMPRESSION_TYPE};
 use crate::constants::versions::Version;
-use crate::loaders::utils::{get_region_files_in_folder, handle_chunk_compression, nbt_uuid_to_u128, parse_region_file, uncompress_zlib};
+use crate::loaders::entity_loader::EntityLoader;
+use crate::loaders::loader_utils::{get_region_files_in_folder, handle_chunk_compression, nbt_uuid_to_u128, parse_region_file, uncompress_zlib};
+use crate::loaders::v3465::utils::entity_utils::parse_nbt_entity;
 use crate::models::entity::entity::{Entity, EntityType, MobEntity};
 use crate::models::other::lasso_string::LassoString;
-use crate::models::other::properties::Properties;
-use crate::models::other::tick::Tick;
-use crate::models::positions::entity_position::EntityPosition;
 use crate::types::WorldKind;
 use crate::utils::position_utils::chunk_offset_to_position;
 // TODO: Support other dimensions (custom paths)
 
-pub(super) struct EntityLoaderV3465 {
-    pub(crate) version: Arc<Version>
+pub struct EntityLoaderV3465 {
+    pub version: Arc<Version>
 }
 
 impl EntityLoaderV3465 {
     fn populate_entity_list(&self, entity_list: &mut Vec<Entity>, chunk_nbt: NBTChunk, dimension: &LassoString) {
         for entity in chunk_nbt.entities {
-            if let Value::IntArray(arr) = entity.uuid {
-                let uuid_parts: &[i32] = &*arr;
-                let e = MobEntity::new(
-                    entity.id,
-                    Tick::new(entity.air_left as usize),
-                    entity.distance_fallen,
-                    Tick::new(entity.fire_ticks_left as usize),
-                    entity.is_invulnerable,
-                    <(f64, f64, f64)>::from(entity.motion),
-                    entity.is_on_ground,
-                    EntityPosition::new(entity.position[0], entity.position[1], entity.position[2], entity.rotation[0], entity.rotation[1], dimension.clone()),
-                    nbt_uuid_to_u128(<[i32; 4]>::try_from(uuid_parts).unwrap()),
-                    Properties::new(entity.others)
-                );
-                entity_list.push(Entity::Mob(e));
+            if let Some(ent) = parse_nbt_entity(entity, dimension) {
+                entity_list.push(ent);
             }
         }
     }

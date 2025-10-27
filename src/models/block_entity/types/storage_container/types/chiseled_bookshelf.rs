@@ -31,6 +31,7 @@ impl StorageContainerTrait for ChiseledBookshelfBlockEntity {
 
 impl BlockEntityTrait for ChiseledBookshelfBlockEntity {
     fn base(&self) -> &GenericBlockEntity { &self.base.base() }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity { self.base.base_mut() }
 }
 
 impl LockableContainer for ChiseledBookshelfBlockEntity {

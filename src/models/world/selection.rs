@@ -12,6 +12,7 @@ use crate::models::world::fulls::full_entity::FullEntity;
 use crate::models::world::world::World;
 use crate::traits::access::prelude::{BlockReader, BlockWriter, EntityReader, EntityWriter};
 use crate::types::{ChunkType, WorldType};
+use crate::utils::lock_utils::WithLock;
 use crate::utils::position_utils::{block_index_to_block_position, block_position_to_chunk_pos_and_block_index, chunk_position_to_world_position, world_position_to_chunk_position};
 
 pub struct Selection<'r, 'a> {
@@ -71,10 +72,12 @@ impl<'r, 'a> BlockReader<'a> for Selection<'r, 'a> {
             let world_chunk_position = chunk_position_to_world_position(chunk_position.position(), chunk_size);
 
             for b in actual_chunk.block_store().blocks() {
+                let pos = Position::new(chunk_position.dimension().clone(), world_chunk_position.0 + relative_pos.0, relative_pos.1, world_chunk_position.1 + relative_pos.2);
                 if !callback(FullBlock::new_with_data(
                     &self.world_ref.get(),
                     b,
-                    Position::new(chunk_position.dimension().clone(), world_chunk_position.0 + relative_pos.0, relative_pos.1, world_chunk_position.1 + relative_pos.2)
+                    actual_chunk.block_entities_store().get_at_world_position(&pos),
+                    pos
                 )) { return; };
 
                 relative_pos.0 = relative_pos.0 + 1;
@@ -108,7 +111,12 @@ impl<'r, 'a> BlockReader<'a> for Selection<'r, 'a> {
                 let lch = ch.lock().unwrap();
                 if let Some(local_block) = lch.block_store().get_block_at_index(relative_index) {
                     let block_position = block_index_to_block_position(lch.position(), relative_index, chunk_size, lowest_y);
-                    return Some(FullBlock::new_with_data(&self.world_ref.get(), local_block, block_position));
+                    return Some(FullBlock::new_with_data(
+                        &self.world_ref.get(),
+                        local_block,
+                        lch.block_entities_store().get_at_world_position(&block_position),
+                        block_position
+                    ));
                 }
                 None
             }

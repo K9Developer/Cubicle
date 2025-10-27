@@ -1,15 +1,20 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
+use std::rc::Rc;
 use fastnbt::Value;
+use crate::models::block_entity::block_entity::BlockEntity;
 use crate::models::other::properties::Properties;
 use crate::models::positions::whole_position::Position;
 use crate::models::world::block::PaletteBlock;
+use crate::models::world::fulls::block_data::BlockData;
+use crate::models::world::fulls::block_states::BlockStates;
 use crate::types::{ChunkType, WorldType};
 use crate::utils::position_utils::block_position_to_chunk_pos_and_block_index;
 
 pub struct FullBlock<'a> {
     name: String,
-    extra: Properties,
+    extra: BlockData,
     position: Position,
     null_flag: bool,
 
@@ -20,17 +25,23 @@ impl<'a> FullBlock<'a> {
     pub fn new(world_ref: &WorldType<'a>) -> Self {
         Self {
             name: "minecraft:air".to_string(),
-            extra: Properties::new(HashMap::new()),
+            extra: BlockData::new(
+                BlockStates::new(Properties::new(HashMap::new())),
+                None
+            ),
             null_flag: false,
             position: Position::new("overworld".into(), 0, 0, 0),
             world_ref: world_ref.clone(),
         }
     }
 
-    pub fn new_with_data(world_ref: &WorldType<'a>, mut block: PaletteBlock, position: Position) -> Self{
+    pub fn new_with_data(world_ref: &WorldType<'a>, mut block: PaletteBlock, block_entity: Option<Rc<BlockEntity>>, position: Position) -> Self{
         Self {
             name: block.name().to_string(),
-            extra: block.properties().to_owned(),
+            extra: BlockData::new(
+                BlockStates::new(block.properties().clone()),
+                block_entity
+            ),
             position,
             world_ref: world_ref.clone(),
             null_flag: false,
@@ -41,9 +52,10 @@ impl<'a> FullBlock<'a> {
     pub fn namespace(&self) -> &str { self.name.split(':').nth(0).unwrap_or("") }
     pub fn key(&self) -> &str {self.name.split(':').nth(1).unwrap_or("")}
     pub fn position(&self) -> &Position { &self.position }
-    pub fn properties(&self) -> &Properties { &self.extra }
+    pub fn states(&self) -> Rc<RefCell<BlockStates>> { self.extra.states() }
+    pub fn data(&self) -> Option<Rc<BlockEntity>> { self.extra.data() }
     pub fn palette_block(&self) -> PaletteBlock {
-        PaletteBlock::new(&self.name, Some(self.extra.properties().clone()))
+        PaletteBlock::new(&self.name, Some(self.extra.states().borrow().all().raw().clone()))
     }
     pub fn parent_chunk(&self) -> Option<(ChunkType, usize)> {
         let mut world = self.world_ref.lock().unwrap();
@@ -61,7 +73,7 @@ impl<'a> FullBlock<'a> {
 
     pub fn set_id(&mut self, id: &str) { self.name = id.to_string(); }
     pub fn set_position(&mut self, position: Position) { self.position = position; }
-    pub fn set_properties(&mut self, properties: Properties) { self.extra = properties; }
+    pub fn set_states(&mut self, states: BlockStates) { self.extra.set_states(states); }
     pub fn delete(&mut self) { self.name = "minecraft:air".to_string(); }
 
     pub fn commit(&self) -> bool {
@@ -89,7 +101,7 @@ impl<'a> fmt::Debug for FullBlock<'a> {
         f.debug_struct("Block")
             .field("name", &self.name)
             .field("position", &self.position)
-            .field("extra", &self.extra)
+            .field("extra", &self.extra.states().borrow().all())
             .finish()
     }
 }
@@ -113,8 +125,8 @@ impl<'a> BlockBuilder<'a> {
 
     pub fn named(mut self, name: &str) -> Self { self.underlying.name = name.to_string(); self}
     pub fn at(mut self, pos: &Position) -> Self { self.underlying.position = pos.clone(); self }
-    pub fn with_properties(mut self, properties: Properties) -> Self { self.underlying.extra = properties; self}
-    pub fn with_property(mut self, path: &str, value: Value) -> Self { self.underlying.extra.set(path, value); self }
+    pub fn with_states(mut self, states: BlockStates) -> Self { self.underlying.extra.set_states(states); self}
+    pub fn with_property(mut self, path: &str, value: Value) -> Self { self.underlying.extra.states().borrow_mut().all_mut().set(path, value); self }
     pub fn build(self) -> FullBlock<'a> {
         self.underlying
     }

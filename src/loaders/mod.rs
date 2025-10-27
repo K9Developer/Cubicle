@@ -1,4 +1,6 @@
-pub mod blocks_loader;
-pub mod entities_loader;
+pub mod block_loader;
+pub mod entity_loader;
 pub mod loader;
-pub mod utils;
+pub mod loader_utils;
+
+pub mod v3465;

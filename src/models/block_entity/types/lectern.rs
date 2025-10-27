@@ -1,5 +1,4 @@
 use crate::models::block_entity::block_entity::GenericBlockEntity;
-use crate::models::block_entity::prelude::command_block::CommandBlockBlockEntity;
 use crate::models::other::inventory::Item;
 use crate::traits::block_entity::BlockEntityTrait;
 
@@ -28,4 +27,5 @@ impl BlockEntityTrait for LecternBlockEntity {
     fn base(&self) -> &GenericBlockEntity {
         &self.base
     }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity { &mut self.base }
 }

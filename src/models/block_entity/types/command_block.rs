@@ -66,4 +66,5 @@ impl BlockEntityTrait for CommandBlockBlockEntity {
     fn base(&self) -> &GenericBlockEntity {
         &self.base
     }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity { &mut self.base }
 }

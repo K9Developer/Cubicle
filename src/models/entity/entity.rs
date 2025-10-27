@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use crate::constants::constants::PLAYER_INVENTORY_SLOT_COUNT;
 use crate::models::other::inventory::Inventory;
+use crate::models::other::lasso_string::LassoString;
 use crate::models::other::properties::Properties;
 use crate::models::other::tick::Tick;
 use crate::models::positions::entity_position::EntityPosition;
@@ -35,10 +37,33 @@ pub struct MobEntity {
     extra: Properties
 }
 
+impl Default for MobEntity {
+    fn default() -> Self {
+        MobEntity::new(
+            "minecraft:cow".to_string(),
+            Tick::new(20),
+            0f32,
+            Tick::new(0),
+            false,
+            (0f64,0f64,0f64),
+            true,
+            EntityPosition::new(0f64,0f64,0f64,0f64,0f64, LassoString::new("overworld")),
+            0,
+            Properties::new(HashMap::new())
+        )
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Entity {
     Player(PlayerEntity),
     Mob(MobEntity),
+}
+
+impl Default for Entity {
+    fn default() -> Self {
+        Entity::Mob(Default::default())
+    }
 }
 
 impl Entity {

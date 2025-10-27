@@ -41,3 +41,19 @@ impl From<&str> for MinecraftColor {
         }
     }
 }
+
+impl From<String> for MinecraftColor {
+    fn from(value: String) -> Self {
+        value.as_str().into()
+    }
+}
+
+
+impl From<Option<&str>> for MinecraftColor {
+    fn from(value: Option<&str>) -> Self {
+        match value {
+            None => { MinecraftColor::Black }
+            Some(s) => { s.into() }
+        }
+    }
+}

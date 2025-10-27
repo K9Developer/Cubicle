@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use super::v3465::BlockLoaderV3465;
 use crate::constants::versions::Version;
 use crate::models::other::region::Region;
 use crate::models::world::chunk::Chunk;
 use std::path::PathBuf;
 use std::sync::Arc;
+use crate::loaders::v3465::block_loader::BlockLoaderV3465;
 use crate::models::other::lasso_string::LassoString;
 use crate::models::world_structures::generic_structure::GenericParentStructure;
 // TODO: Add more funcs and lazy loading like empty_load all regions so we get metadata of all chunks and we can count them, etc. - Think of a system later

@@ -1,9 +1,10 @@
+use std::rc::Rc;
 use crate::models::block_entity::prelude::*;
 use crate::models::positions::whole_position::Position;
 
 #[derive(Debug)]
 pub struct BlockEntityStore {
-    block_entities: Vec<BlockEntity>, // is this fastest even if theres a chunk full of chests?
+    block_entities: Vec<Rc<BlockEntity>>, // is this fastest even if theres a chunk full of chests?
 }
 
 impl BlockEntityStore {
@@ -14,24 +15,28 @@ impl BlockEntityStore {
         BlockEntityStore { block_entities: Vec::with_capacity(capacity) }
     }
 
-    pub fn get_at_world_position(&self, pos: &Position) -> Option<&BlockEntity> {
-        for block_entity in &self.block_entities {
+    pub fn get_at_world_position(&self, pos: &Position) -> Option<Rc<BlockEntity>> {
+        for block_entity in self.block_entities.iter() {
             if block_entity.base().position() == pos {
-                return Some(block_entity)
+                return Some(block_entity.clone())
             }
         }
         None
     }
 
-    pub fn get_all(&self) -> &Vec<BlockEntity> { &self.block_entities }
+    pub fn get_all(&self) -> &Vec<Rc<BlockEntity>> { &self.block_entities }
 
-    pub fn set_at_world_position(&mut self, pos: &Position, ent: BlockEntity) {
+    pub fn set_at_world_position(&mut self, ent: BlockEntity) {
         for (ind, block_entity) in self.block_entities.iter().enumerate() {
-            if block_entity.base().position() == pos {
-                self.block_entities.insert(ind, ent);
+            if block_entity.base().position() == ent.base().position() {
+                self.block_entities.insert(ind, Rc::new(ent));
                 return;
             }
         }
-        self.block_entities.push(ent);
+        self.block_entities.push(Rc::new(ent));
+    }
+
+    pub unsafe fn add_unchecked(&mut self, ent: BlockEntity) {
+        self.block_entities.push(Rc::new(ent));
     }
 }

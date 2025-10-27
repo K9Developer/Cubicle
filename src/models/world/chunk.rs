@@ -23,7 +23,7 @@ pub struct Chunk {
     biome_store: BiomeStore,
     heightmap_store: HeightmapStore,
     tile_ticks: Vec<TileTick>,
-    block_entities: BlockEntityStore,
+    block_entity_store: BlockEntityStore,
     entity_keys: Vec<EntityStoreKey>,
 
     structures: Vec<StructureStoreReference>,
@@ -69,7 +69,7 @@ impl Chunk {
 
             block_store: BlockStore::with_palette_capacity(version.data.chunk_size, version.data.lowest_y, version.data.highest_y, block_store_palette_capacity),
             biome_store: BiomeStore::with_palette_capacity(version.data.chunk_size, version.data.lowest_y, version.data.highest_y, biome_store_palette_capacity),
-            block_entities: BlockEntityStore::with_capacity(block_entity_capacity),
+            block_entity_store: BlockEntityStore::with_capacity(block_entity_capacity),
             heightmap_store: HeightmapStore::new(version.clone()),
             tile_ticks: Vec::new(),
 
@@ -91,8 +91,8 @@ impl Chunk {
         &self.status
     }
 
-    pub fn stores(&self) -> (&BlockStore, &BiomeStore, &HeightmapStore) { (&self.block_store, &self.biome_store, &self.heightmap_store) }
-    pub fn stores_mut(&mut self) -> (&mut BlockStore, &mut BiomeStore, &mut HeightmapStore) { (&mut self.block_store, &mut self.biome_store, &mut self.heightmap_store) }
+    pub fn stores(&self) -> (&BlockStore, &BiomeStore, &HeightmapStore, &BlockEntityStore) { (&self.block_store, &self.biome_store, &self.heightmap_store, &self.block_entity_store) }
+    pub fn stores_mut(&mut self) -> (&mut BlockStore, &mut BiomeStore, &mut HeightmapStore, &mut BlockEntityStore) { (&mut self.block_store, &mut self.biome_store, &mut self.heightmap_store, &mut self.block_entity_store) }
     pub fn block_store(&self) -> &BlockStore {
         &self.block_store
     }
@@ -101,6 +101,8 @@ impl Chunk {
     pub fn biome_store_mut(&mut self) -> &mut BiomeStore { &mut self.biome_store }
     pub fn heightmap_store(&self) -> &HeightmapStore { &self.heightmap_store }
     pub fn heightmap_store_mut(&mut self) -> &mut HeightmapStore { &mut self.heightmap_store }
+    pub fn block_entities_store(&self) -> &BlockEntityStore { &self.block_entity_store }
+    pub fn block_entities_store_mut(&mut self) -> &mut BlockEntityStore { &mut self.block_entity_store }
     pub fn tile_ticks(&self) -> &Vec<TileTick> { &self.tile_ticks }
 
     pub fn entity_keys(&self) -> &Vec<EntityStoreKey> { &self.entity_keys }

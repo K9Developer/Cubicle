@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use crate::constants::versions::Version;
-use crate::loaders::entities_loader::v3465::EntityLoaderV3465;
+use crate::loaders::v3465::entity_loader::EntityLoaderV3465;
 use crate::models::entity::entity::Entity;
 use crate::models::other::lasso_string::LassoString;
 use crate::models::other::region::Region;

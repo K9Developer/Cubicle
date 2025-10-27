@@ -9,6 +9,14 @@ pub struct Item {
     properties: Properties
 }
 
+impl Item {
+    pub fn new(id: String, count: u32, properties: Properties) -> Self {
+        Item {
+            id, count, properties
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Inventory {
     items: HashMap<ItemSlot, Item>, // this is saving space and allocation time but is slower

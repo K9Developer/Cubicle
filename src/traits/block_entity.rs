@@ -16,4 +16,5 @@ pub trait StorageContainerTrait {
 
 pub trait BlockEntityTrait {
     fn base(&self) -> &GenericBlockEntity;
+    fn base_mut(&mut self) -> &mut GenericBlockEntity;
 }

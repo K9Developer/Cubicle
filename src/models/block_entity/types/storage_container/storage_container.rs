@@ -5,16 +5,14 @@ use crate::models::block_entity::types::storage_container::types::standard_conta
 use crate::models::other::inventory::Inventory;
 use crate::traits::block_entity::{BlockEntityTrait, StorageContainerTrait};
 
-// Standard - chest, trapped chest, barrel, shulker box, dispenser, dropper
+// Normal - chest, trapped chest, barrel, shulker box,
+// Spitter - dispenser, dropper
 // hopper
 // chiseled bookshelf
 #[derive(Debug)]
 pub enum StorageContainerBlockEntity {
-    Chest(StandardStorageContainerBlockEntity),
-    Barrel(StandardStorageContainerBlockEntity),
-    ShulkerBox(StandardStorageContainerBlockEntity),
-    Dispenser(StandardStorageContainerBlockEntity),
-    Droper(StandardStorageContainerBlockEntity),
+    Normal(StandardStorageContainerBlockEntity),
+    Spitter(StandardStorageContainerBlockEntity),
 
     Hopper(HopperBlockEntity),
 
@@ -23,8 +21,21 @@ pub enum StorageContainerBlockEntity {
 
 impl BlockEntityTrait for StorageContainerBlockEntity {
     fn base(&self) -> &GenericBlockEntity {
-        let this: &dyn BlockEntityTrait = self;
-        this.base()
+        match self {
+            StorageContainerBlockEntity::Normal(a) => a.base(),
+            StorageContainerBlockEntity::Spitter(a) => a.base(),
+            StorageContainerBlockEntity::Hopper(a) => a.base(),
+            StorageContainerBlockEntity::ChiseledBookshelf(a) => a.base(),
+        }
+    }
+
+    fn base_mut(&mut self) -> &mut GenericBlockEntity {
+        match self {
+            StorageContainerBlockEntity::Normal(a) => a.base_mut(),
+            StorageContainerBlockEntity::Spitter(a) => a.base_mut(),
+            StorageContainerBlockEntity::Hopper(a) => a.base_mut(),
+            StorageContainerBlockEntity::ChiseledBookshelf(a) => a.base_mut(),
+        }
     }
 }
 
@@ -43,5 +54,35 @@ impl StorageContainerTrait for StorageContainerBlockEntity {
     fn set_items(&mut self, items: Inventory) {
         let this: &mut dyn StorageContainerTrait = self;
         this.set_items(items)
+    }
+}
+
+impl StorageContainerBlockEntity {
+    pub fn as_normal(&self) -> Option<&StandardStorageContainerBlockEntity> {
+        match self {
+            StorageContainerBlockEntity::Normal(a) => Some(a),
+            _ => None,
+        }
+    }
+
+    pub fn as_spitter(&self) -> Option<&StandardStorageContainerBlockEntity> {
+        match self {
+            StorageContainerBlockEntity::Normal(a) => Some(a),
+            _ => None,
+        }
+    }
+
+    pub fn as_hopper(&self) -> Option<&HopperBlockEntity> {
+        match self {
+            StorageContainerBlockEntity::Hopper(a) => Some(a),
+            _ => None,
+        }
+    }
+
+    pub fn as_chiseled_bookshelf(&self) -> Option<&ChiseledBookshelfBlockEntity> {
+        match self {
+            StorageContainerBlockEntity::ChiseledBookshelf(a) => Some(a),
+            _ => None,
+        }
     }
 }

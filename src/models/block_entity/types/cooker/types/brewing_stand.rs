@@ -10,17 +10,17 @@ pub struct BrewingStandBlockEntity {
     base: GenericBlockEntity,
     items: Inventory,
     ticks_left_to_brew: Tick,
-    applied_fuel_left: u8,
+    applied_fuel_left: i8,
     lock: Option<String>,
     custom_name: Option<TextComponent>,
 }
 
 impl BrewingStandBlockEntity {
-    fn new(
+    pub(crate) fn new(
         base: GenericBlockEntity,
         items: Inventory,
         ticks_left_to_brew: Tick,
-        applied_fuel_left: u8,
+        applied_fuel_left: i8,
         lock: Option<String>,
         custom_name: Option<TextComponent>,
     ) -> Self {
@@ -31,7 +31,7 @@ impl BrewingStandBlockEntity {
 
     pub fn items(&self) -> &Inventory { &self.items }
     pub fn ticks_left_to_brew(&self) -> &Tick { &self.ticks_left_to_brew }
-    pub fn applied_fuel_left(&self) -> u8 { self.applied_fuel_left } // 0-20
+    pub fn applied_fuel_left(&self) -> i8 { self.applied_fuel_left } // 0-20
     pub fn custom_name(&self) -> Option<&TextComponent> { self.custom_name.as_ref() }
     pub fn fuel_item(&self) -> Option<&Item> { self.items.get_at(4) }
     pub fn ingredient_item(&self) -> Option<&Item> { self.items.get_at(3) }
@@ -44,6 +44,7 @@ impl BrewingStandBlockEntity {
 
 impl BlockEntityTrait for BrewingStandBlockEntity {
     fn base(&self) -> &GenericBlockEntity { &self.base }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity { &mut self.base }
 }
 
 impl LockableContainer for BrewingStandBlockEntity {

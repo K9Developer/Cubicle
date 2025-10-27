@@ -5,7 +5,9 @@ use crate::models::block_entity::types::cooker::types::furnace::FurnaceBlockEnti
 use crate::models::other::inventory::Item;
 use crate::traits::block_entity::BlockEntityTrait;
 
-// furnace, smoker, blast furnace, campfire, soul campfire, brewing stand
+// Furnace - furnace, smoker, blast furnace
+// campfire - campfire, soul campfire,
+// brewing stand
 #[derive(Debug)]
 pub enum CookerBlockEntity {
     Furnace(FurnaceBlockEntity),
@@ -15,8 +17,18 @@ pub enum CookerBlockEntity {
 
 impl BlockEntityTrait for CookerBlockEntity {
     fn base(&self) -> &GenericBlockEntity {
-        let this = self as &dyn BlockEntityTrait;
-        this.base()
+        match self {
+            CookerBlockEntity::Furnace(a) => a.base(),
+            CookerBlockEntity::Campfire(a) => a.base(),
+            CookerBlockEntity::BrewingStand(a) => a.base(),
+        }
+    }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity {
+        match self {
+            CookerBlockEntity::Furnace(a) => a.base_mut(),
+            CookerBlockEntity::Campfire(a) => a.base_mut(),
+            CookerBlockEntity::BrewingStand(a) => a.base_mut(),
+        }
     }
 }
 
@@ -51,6 +63,29 @@ impl CookerBlockEntity {
                 else { None }
             },
             CookerBlockEntity::Campfire(e) => Some(e.cooking_items()),
+        }
+    }
+}
+
+impl CookerBlockEntity {
+    pub fn as_furnace(&self) -> Option<&FurnaceBlockEntity> {
+        match self {
+            CookerBlockEntity::Furnace(a) => Some(a),
+            _ => None,
+        }
+    }
+
+    pub fn as_campfire(&self) -> Option<&CampfireBlockEntity> {
+        match self {
+            CookerBlockEntity::Campfire(a) => Some(a),
+            _ => None,
+        }
+    }
+
+    pub fn as_brewing_stand(&self) -> Option<&BrewingStandBlockEntity> {
+        match self {
+            CookerBlockEntity::BrewingStand(a) => Some(a),
+            _ => None,
         }
     }
 }

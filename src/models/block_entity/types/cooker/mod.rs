@@ -1,2 +1,2 @@
 pub mod cooker;
-mod types;
+pub mod types;

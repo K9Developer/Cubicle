@@ -1,6 +1,5 @@
 use crate::constants::constants::MAX_SIGN_LINE_COUNT;
 use crate::models::block_entity::block_entity::GenericBlockEntity;
-use crate::models::block_entity::prelude::lectern::LecternBlockEntity;
 use crate::models::other::mojang_data::color::MinecraftColor;
 use crate::models::other::mojang_data::text_component::TextComponent;
 use crate::traits::block_entity::BlockEntityTrait;
@@ -67,4 +66,5 @@ impl BlockEntityTrait for SignBlockEntity {
     fn base(&self) -> &GenericBlockEntity {
         &self.base
     }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity { &mut self.base }
 }

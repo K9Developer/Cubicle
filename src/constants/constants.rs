@@ -8,3 +8,5 @@ pub const CAMPFIRE_ITEM_COUNT: usize = 4;
 pub const BREWING_STAND_RESULT_COUNT: usize = 3;
 pub const MAX_SIGN_LINE_COUNT: usize = 8;
 pub const PLAYER_INVENTORY_SLOT_COUNT: usize = 41;
+
+pub const MOJANG_VERSION_MANIFEST: &str = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";

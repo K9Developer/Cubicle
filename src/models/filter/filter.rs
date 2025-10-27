@@ -28,7 +28,7 @@ impl<'a> Filter<'a> {
             "key:pos" => ComparableValue::Position(b.position().clone()),
             "key:id" => ComparableValue::Text(b.id().to_owned()),
             _ => {
-                match b.properties().get(k) {
+                match b.states().borrow().all().get(k) {
                     Some(p) => ComparableValue::from_nbt_value(p),
                     None => { ComparableValue::Null }
                 }

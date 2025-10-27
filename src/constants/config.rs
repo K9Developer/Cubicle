@@ -1,5 +1,5 @@
 pub mod config {
     pub mod data_paths {
-        pub const VERSION_DATA: &str = include_str!("data/version_data.json");
+        pub const GENERIC_VERSION_DATA: &str = include_str!("data/generic_version_data.json");
     }
 }

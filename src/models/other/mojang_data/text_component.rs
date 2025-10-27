@@ -1,13 +1,27 @@
 use std::collections::HashMap;
-use fastnbt::Value;
+use fastnbt::Value as NBTValue;
+use serde::Deserialize;
+use serde_json::Value;
 use crate::models::other::mojang_data::color::MinecraftColor;
 
 #[derive(Debug)]
 struct TextComponentEvent {
     action: String,
-    value: HashMap<String, Value>,
+    value: NBTValue,
 }
 
+impl TextComponentEvent {
+    pub fn from_json(mut val: Value) -> Self {
+        let v = val.as_object_mut().unwrap();
+        TextComponentEvent {
+            action: v.remove("action").and_then(|val| val.as_str().map(str::to_owned)).unwrap_or_default(),
+            value: NBTValue::deserialize(val).unwrap_or(NBTValue::Compound(HashMap::new())),
+        }
+    }
+}
+
+
+// TODO: https://minecraft.wiki/w/Text_component_format more accuracy
 #[derive(Debug)]
 pub struct TextComponent {
     text: String,
@@ -33,6 +47,25 @@ impl TextComponent {
             strikethrough: false,
             hover_event: None,
             click_event: None,
+        }
+    }
+
+    pub fn from_string(text: &str) -> Self {
+        if let Ok(mut json) = serde_json::from_str::<Value>(text) {
+            let v = json.as_object_mut().unwrap();
+            TextComponent {
+                text: v.remove("text").and_then(|val| val.as_str().map(str::to_owned)).unwrap_or_default(),
+                color: v.remove("color").and_then(|val| Some(MinecraftColor::from(val.as_str()))).unwrap_or(MinecraftColor::Black),
+                bold: v.remove("bold").and_then(|val| val.as_bool()).unwrap_or(false),
+                italic: v.remove("italic").and_then(|val| val.as_bool()).unwrap_or(false),
+                underline: v.remove("underline").and_then(|val| val.as_bool()).unwrap_or(false),
+                obfuscated: v.remove("obfuscated").and_then(|val| val.as_bool()).unwrap_or(false),
+                strikethrough: v.remove("strikethrough").and_then(|val| val.as_bool()).unwrap_or(false),
+                hover_event: v.remove("hover_event").and_then(|val| Some(TextComponentEvent::from_json(val))),
+                click_event: v.remove("click_event").and_then(|val| Some(TextComponentEvent::from_json(val))),
+            }
+        } else {
+            Self::new(text)
         }
     }
 

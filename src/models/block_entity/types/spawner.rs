@@ -1,13 +1,11 @@
-use std::collections::HashMap;
-use fastnbt::Value;
+use serde::{Deserialize, Serialize};
 use crate::models::block_entity::block_entity::GenericBlockEntity;
-use crate::models::block_entity::prelude::lectern::LecternBlockEntity;
 use crate::models::entity::entity::Entity;
 use crate::models::other::tick::Tick;
 use crate::traits::block_entity::BlockEntityTrait;
 
-#[derive(Debug)]
-struct LightLimitRange {
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LightLimitRange {
     pub min_inclusive: i32,
     pub max_inclusive: i32,
 }
@@ -24,19 +22,33 @@ impl LightLimitRange {
 
 #[derive(Debug)]
 pub struct CustomSpawnRules {
-    block_light_range: LightLimitRange,
-    sky_light_range: LightLimitRange,
+    pub block_light_range: LightLimitRange,
+    pub sky_light_range: LightLimitRange,
 }
 
-#[derive(Debug)]
-struct EquipmentDropChances {
-    feet: f32,
-    legs: f32,
-    chest: f32,
-    head: f32,
-    body: f32,
-    mainhand: f32,
-    offhand: f32
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EquipmentDropChances {
+    pub feet: f32,
+    pub legs: f32,
+    pub chest: f32,
+    pub head: f32,
+    pub body: f32,
+    pub mainhand: f32,
+    pub offhand: f32
+}
+
+impl EquipmentDropChances {
+    pub fn new_uniform(val: f32) -> Self {
+        EquipmentDropChances {
+            feet: val,
+            legs: val,
+            chest: val,
+            head: val,
+            body: val,
+            mainhand: val,
+            offhand: val
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -45,17 +57,54 @@ pub struct SpawnEquipment {
     drop_chances: EquipmentDropChances
 }
 
+impl SpawnEquipment {
+    pub fn new(loot_table_resource: String, drop_chances: EquipmentDropChances) -> Self {
+        SpawnEquipment {
+            loot_table: loot_table_resource,
+            drop_chances
+        }
+    }
+
+    pub fn loot_table(&self) -> &str { &self.loot_table }
+    pub fn drop_chances(&self) -> &EquipmentDropChances { &self.drop_chances }
+
+    pub fn set_loot_table(&mut self, loot_table: String) { self.loot_table = loot_table; }
+    pub fn set_drop_chances(&mut self, drop_chances: EquipmentDropChances) { self.drop_chances = drop_chances; }
+}
+
 #[derive(Debug)]
 pub struct SpawnerSpawnData {
     entity: Entity,
     spawn_rules: Option<CustomSpawnRules>,
-    equipment: SpawnEquipment
+    equipment: Option<SpawnEquipment>
+}
+
+impl SpawnerSpawnData {
+    pub fn new(entity: Entity, spawn_rules: Option<CustomSpawnRules>, equipment: Option<SpawnEquipment>) -> Self {
+        SpawnerSpawnData {
+            entity, spawn_rules, equipment
+        }
+    }
+
+    pub fn entity(&self) -> &Entity { &self.entity }
+    pub fn spawn_rules(&self) -> &Option<CustomSpawnRules> { &self.spawn_rules }
+    pub fn equipment(&self) -> &Option<SpawnEquipment> { &self.equipment }
+
+    pub fn set_entity(&mut self, entity: Entity) { self.entity = entity; }
+    pub fn set_spawn_rules(&mut self, spawn_rules: Option<CustomSpawnRules>) { self.spawn_rules = spawn_rules; }
+    pub fn set_equipment(&mut self, equipment: Option<SpawnEquipment>) { self.equipment = equipment; }
 }
 
 #[derive(Debug)]
-struct SpawnPotential {
+pub struct SpawnPotential {
     weight: i32,
     data: SpawnerSpawnData
+}
+
+impl SpawnPotential {
+    pub fn new(weight: i32, data: SpawnerSpawnData) -> Self {
+        SpawnPotential { weight, data }
+    }
 }
 
 #[derive(Debug)]
@@ -128,4 +177,5 @@ impl BlockEntityTrait for SpawnerBlockEntity {
     fn base(&self) -> &GenericBlockEntity {
         &self.base
     }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity { &mut self.base }
 }

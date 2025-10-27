@@ -9,7 +9,7 @@ use crate::traits::block_entity::{BlockEntityTrait, LockableContainer};
 pub struct FurnaceBlockEntity {
     base: GenericBlockEntity,
     items: Inventory,
-    cook_history: HashMap<String, u32>,
+    cook_history: HashMap<String, i32>,
 
     lock: Option<String>,
     custom_name: Option<TextComponent>,
@@ -23,7 +23,7 @@ impl FurnaceBlockEntity {
     pub fn new(
         base: GenericBlockEntity,
         items: Inventory,
-        cook_history: HashMap<String, u32>,
+        cook_history: HashMap<String, i32>,
         lock: Option<String>,
         custom_name: Option<TextComponent>,
         current_fuel_ticks_left: Tick,
@@ -36,7 +36,7 @@ impl FurnaceBlockEntity {
     }
 
     pub fn items(&self) -> &Inventory { &self.items }
-    pub fn cook_history(&self) -> &HashMap<String, u32> { &self.cook_history }
+    pub fn cook_history(&self) -> &HashMap<String, i32> { &self.cook_history }
     pub fn current_fuel_ticks_left(&self) -> &Tick { &self.current_fuel_ticks_left }
     pub fn current_item_cooking_ticks_spent(&self) -> &Tick { &self.current_item_cooking_ticks_spent }
     pub fn total_cooking_ticks_for_current_item(&self) -> &Tick { &self.total_cooking_ticks_for_current_item }
@@ -50,6 +50,7 @@ impl FurnaceBlockEntity {
 
 impl BlockEntityTrait for FurnaceBlockEntity {
     fn base(&self) -> &GenericBlockEntity { &self.base }
+    fn base_mut(&mut self) -> &mut GenericBlockEntity { &mut self.base }
 }
 
 impl LockableContainer for FurnaceBlockEntity {
