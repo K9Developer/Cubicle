@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use crate::constants::versions::Version;
 use crate::loaders::loader::MainLoader;
+use crate::models::entity::entity::PlayerEntity;
 use crate::models::other::lasso_string::LassoString;
 use crate::models::other::region::{Region, RegionType};
 use crate::models::other::tick::Tick;
@@ -24,6 +25,7 @@ pub struct World<'a> {
 
     dimensions: HashMap<LassoString, Dimension>,
     unloaded_regions: Vec<Region>,
+    players: Vec<PlayerEntity>,
 
     self_ref: Option<WorldType<'a>>
 }
@@ -97,6 +99,16 @@ impl<'a> World<'a> {
 
 // Load related
 impl<'a> World<'a> {
+
+    pub fn load(&mut self) {
+        // TODO: here will dry load all regions etc.
+
+        let pl = self.loader.player_loader();
+        let paths = pl.get_player_files(self.path.clone());
+        for path in paths {
+            self.players.push(pl.parse_player(&path));
+        }
+    }
 
     pub fn register_regions(&mut self) -> usize {
         self.unloaded_regions = self.loader().block_loader().get_region_files(self.path.clone());

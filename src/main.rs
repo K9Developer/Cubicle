@@ -16,6 +16,7 @@ use cubicle::utils::lock_utils::WithLock;
 use cubicle::utils::position_utils::{chunk_offset_to_position, chunk_position_to_world_position, relative_position_to_world_position};
 // TODO: Finish all todos before doing more versions!
 /*
+TODO: Make HeightmapStore smaller and stores too
 TODO: Some script to auto generate block states file (could GH actions)
 // TODO: Make the entities be like the block entities in terms of categories.
 enum Entity {
@@ -52,7 +53,6 @@ TODO: Check all ingame block entities and add main ones like crafter
 TODO: When saving a world with a sign for example that has both sides with text to a version lower that doesnt have that feature we should have the function return StripLog or somth that shows what was ignored
 
 TODO: lock is an ItemPredicate (look at brewing stand lock on wiki), need to parse and do it
-TODO: Allocate an arena and then chunk will use that. Somehow compress chunk. Each region is around 100 MB
 TODO: Have some kind of config we can setup for version translations (what happens when situations)
 */
 
@@ -61,10 +61,12 @@ fn main() {
     // Create world object
     let world_path = "C:/Users/ilaik/AppData/Roaming/.minecraft/saves/1_20_1 - Cubicle Test";
     let version = VersionManager::get("1.20.1", WorldKind::Singleplayer);
-    let world = World::new(world_path.parse().unwrap(), version);
+    let mut world = World::new(world_path.parse().unwrap(), version);
+
 
     // Register all regions and parse the region at 0 0
     world.with(|w| {
+        w.load();
         let region_position = RegionPosition::new(0, 0, "overworld".into());
 
         w.register_regions();
@@ -74,36 +76,6 @@ fn main() {
         println!("Took {:?}", e)
     });
 
-    world.with(|w| {
-        let b = w.select().block_at_position(Position::new("overworld".into(), 38, 81, 38)).unwrap();
-        let a = b.data().unwrap();
-        let x = a.as_cooker().unwrap();
-        let i = x.as_furnace().unwrap();
-        println!("{:?}", i);
-
-    })
-
-
-    // Create a filter that will catch stone blocks that their X value is <= than 3
-   //  let block_filter = Filter::And(vec![
-   //      Filter::Compare(FilterKey::ID, FilterOperation::Equals, "minecraft:stone".into()),
-   //      Filter::Compare(FilterKey::X_POSITION, FilterOperation::LessThanEquals, 3.into()),
-   //  ]);
-   //
-   // world.with(|w| {
-   //
-   //     // Create selection of world (this way we edit and do more complicated operations on worlds)
-   //     let mut selection = w.select();
-   //
-   //     // Find the blocks using the filter and a callback
-   //     selection.find_blocks(block_filter, |mut matching_block| {
-   //
-   //         // Set the matching block to a redstone block and commit the changes to the world
-   //         matching_block.set_id("minecraft:redstone_block");
-   //         matching_block.commit();
-   //         true
-   //     });
-   // })
 }
 
 

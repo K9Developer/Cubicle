@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use crate::{transmute_map, I32};
-use crate::loaders::block_loader::BlockLoader;
+use crate::loaders::templates::block_loader::BlockLoader;
 use crate::loaders::v3465::utils::nbt_utils::{parse_nbt_item, parse_nbt_storage_container, parse_sign_text_block, parse_spawner_spawn_data, parse_spawner_spawn_potentials, take_bool, take_i16, take_i32, take_i32_vec, take_i8, take_inventory, take_list, take_long, take_map, take_string, take_text_component};
 use crate::models::block_entity::block_entity::BlockEntity;
 use crate::models::block_entity::prelude::*;
@@ -39,6 +39,7 @@ pub struct BlockLoaderV3465 {
 }
 
 impl BlockLoaderV3465 {
+    #[inline]
     unsafe fn parse_longs(&self, longs: Vec<u64>, bits_per_entry: u32, max_entries: usize, index_replacement_map: &[usize], output_slice: &mut [usize]) {
         let entries_per_long = (u64::BITS / bits_per_entry) as usize;
         let mut current_entry_count = 0;
@@ -56,8 +57,6 @@ impl BlockLoaderV3465 {
             }
         }
     }
-
-
 
     unsafe fn parse_section_blocks(&self, section: NBTSection, block_store: &mut BlockStore, section_block_count: usize) {
         let Some(block_states) = section.block_states else {return};

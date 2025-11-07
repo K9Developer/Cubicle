@@ -2,13 +2,14 @@
 
 use std::sync::Arc;
 use crate::constants::versions::Version;
-use crate::loaders::block_loader::{get_block_loader, BlockLoader};
-use crate::loaders::entity_loader::{get_entity_loader, EntityLoader};
+use crate::loaders::templates::block_loader::{get_block_loader, BlockLoader};
+use crate::loaders::templates::entity_loader::{get_entity_loader, EntityLoader};
+use crate::loaders::templates::player_loader::{get_player_loader, PlayerLoader};
 
 pub struct MainLoader<'a> {
     block_loader: Box<dyn BlockLoader<'a>>,
     entity_loader: Box<dyn EntityLoader<'a>>,
-// player_loader
+    player_loader: Box<dyn PlayerLoader<'a>>,
 }
 
 // TODO: Also make it possible to detect data version automatically - by that, version too maybe?
@@ -16,10 +17,12 @@ impl<'a> MainLoader<'a> {
     pub fn new(version: Arc<Version>) -> Self {
         Self {
             block_loader: get_block_loader(version.clone()),
-            entity_loader: get_entity_loader(version)
+            entity_loader: get_entity_loader(version.clone()),
+            player_loader: get_player_loader(version),
         }
     }
 
     pub fn block_loader(&self) -> &Box<dyn BlockLoader<'a>> { &self.block_loader }
     pub fn entity_loader(&self) -> &Box<dyn EntityLoader<'a>> { &self.entity_loader }
+    pub fn player_loader(&self) -> &Box<dyn PlayerLoader<'a>> { &self.player_loader }
 }
